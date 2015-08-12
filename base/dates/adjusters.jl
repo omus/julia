@@ -14,50 +14,48 @@ Base.trunc(dt::DateTime,p::Type{Second}) = dt - Millisecond(dt)
 Base.trunc(dt::DateTime,p::Type{Millisecond}) = dt
 
 # Adjusters
-firstdayofweek(dt::Date) = Date(UTD(value(dt) - dayofweek(dt) + 1))
-firstdayofweek(dt::DateTime) = DateTime(firstdayofweek(Date(dt)))
-lastdayofweek(dt::Date) = Date(UTD(value(dt) + (7-dayofweek(dt))))
-lastdayofweek(dt::DateTime) = DateTime(lastdayofweek(Date(dt)))
-
-@vectorize_1arg TimeType firstdayofweek
-@vectorize_1arg TimeType lastdayofweek
-
-firstdayofmonth(dt::Date) = Date(UTD(value(dt)-day(dt)+1))
-firstdayofmonth(dt::DateTime) = DateTime(firstdayofmonth(Date(dt)))
-function lastdayofmonth(dt::Date)
-    y,m,d = yearmonthday(dt)
-    return Date(UTD(value(dt)+daysinmonth(y,m)-d))
-end
-lastdayofmonth(dt::DateTime) = DateTime(lastdayofmonth(Date(dt)))
-
-@vectorize_1arg TimeType firstdayofmonth
-@vectorize_1arg TimeType lastdayofmonth
-
-firstdayofyear(dt::Date) = Date(UTD(value(dt)-dayofyear(dt)+1))
-firstdayofyear(dt::DateTime) = DateTime(firstdayofyear(Date(dt)))
-function lastdayofyear(dt::Date)
-    y,m,d = yearmonthday(dt)
-    return Date(UTD(value(dt)+daysinyear(y)-dayofyear(y,m,d)))
-end
-lastdayofyear(dt::DateTime) = DateTime(lastdayofyear(Date(dt)))
-
-@vectorize_1arg TimeType firstdayofyear
-@vectorize_1arg TimeType lastdayofyear
-
-function firstdayofquarter(dt::Date)
+firstdayof(dt::Date,::Type{Week}) = Date(UTD(value(dt) - dayofweek(dt) + 1))
+firstdayof(dt::Date,::Type{Month}) = Date(UTD(value(dt) - day(dt) + 1))
+firstdayof(dt::Date,::Type{Year}) = Date(UTD(value(dt) - dayofyear(dt) + 1))
+function firstdayof(dt::Date,::Type{Quarter})
     y,m = yearmonth(dt)
     mm = m < 4 ? 1 : m < 7 ? 4 : m < 10 ? 7 : 10
     return Date(y,mm,1)
 end
-function lastdayofquarter(dt::Date)
+
+lastdayof(dt::Date,::Type{Week}) = Date(UTD(value(dt) + (7 - dayofweek(dt))))
+function lastdayof(dt::Date,::Type{Month})
+    y,m,d = yearmonthday(dt)
+    return Date(UTD(value(dt) + daysinmonth(y,m) - d))
+end
+function lastdayof(dt::Date,::Type{Year})
+    y,m,d = yearmonthday(dt)
+    return Date(UTD(value(dt)+daysinyear(y)-dayofyear(y,m,d)))
+end
+function lastdayof(dt::Date,::Type{Quarter})
     y,m = yearmonth(dt)
     mm,d = m < 4 ? (3,31) : m < 7 ? (6,30) : m < 10 ? (9,30) : (12,31)
     return Date(y,mm,d)
 end
-firstdayofquarter(dt::DateTime) = DateTime(firstdayofquarter(Date(dt)))
-lastdayofquarter(dt::DateTime) = DateTime(lastdayofquarter(Date(dt)))
-@vectorize_1arg TimeType firstdayofquarter
-@vectorize_1arg TimeType lastdayofquarter
+
+firstdayof(dt::DateTime,t::Period) = DateTime(firstdayof(Date(dt), t))
+lastdayof(dt::DateTime,t::Period) = DateTime(lastdayof(Date(dt), t))
+
+function firstdayof{T<:TimeType}(a::AbstractArray{T},t::Period)
+    result = similar(a)
+    for i in 1:length(a)
+        result[i] = firstdayof(a[i],t)
+    end
+    return result
+end
+
+function lastdayof{T<:TimeType}(a::AbstractArray{T},t::Period)
+    result = similar(a)
+    for i in 1:length(a)
+        result[i] = lastdayof(a[i],t)
+    end
+    return result
+end
 
 # Temporal Adjusters
 immutable DateFunction

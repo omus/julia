@@ -18,6 +18,7 @@ for T in (:Hour,:Minute,:Second,:Millisecond)
         $T(v::Number) = new(v)
     end
 end
+abstract Quarter <: DatePeriod
 
 # Instant types represent different monotonically increasing timelines
 abstract Instant <: AbstractTime

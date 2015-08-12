@@ -28,57 +28,57 @@ oct = Dates.DateTime(2013,10,10) #Thursday
 nov = Dates.DateTime(2013,11,11) #Monday
 dec = Dates.DateTime(2013,12,11) #Wednesday
 
-@test Dates.lastdayofmonth(jan) == Dates.DateTime(2013,1,31)
-@test Dates.lastdayofmonth(feb) == Dates.DateTime(2013,2,28)
-@test Dates.lastdayofmonth(mar) == Dates.DateTime(2013,3,31)
-@test Dates.lastdayofmonth(apr) == Dates.DateTime(2013,4,30)
-@test Dates.lastdayofmonth(may) == Dates.DateTime(2013,5,31)
-@test Dates.lastdayofmonth(jun) == Dates.DateTime(2013,6,30)
-@test Dates.lastdayofmonth(jul) == Dates.DateTime(2013,7,31)
-@test Dates.lastdayofmonth(aug) == Dates.DateTime(2013,8,31)
-@test Dates.lastdayofmonth(sep) == Dates.DateTime(2013,9,30)
-@test Dates.lastdayofmonth(oct) == Dates.DateTime(2013,10,31)
-@test Dates.lastdayofmonth(nov) == Dates.DateTime(2013,11,30)
-@test Dates.lastdayofmonth(dec) == Dates.DateTime(2013,12,31)
+@test Dates.lastdayof(jan,Dates.Month) == Dates.DateTime(2013,1,31)
+@test Dates.lastdayof(feb,Dates.Month) == Dates.DateTime(2013,2,28)
+@test Dates.lastdayof(mar,Dates.Month) == Dates.DateTime(2013,3,31)
+@test Dates.lastdayof(apr,Dates.Month) == Dates.DateTime(2013,4,30)
+@test Dates.lastdayof(may,Dates.Month) == Dates.DateTime(2013,5,31)
+@test Dates.lastdayof(jun,Dates.Month) == Dates.DateTime(2013,6,30)
+@test Dates.lastdayof(jul,Dates.Month) == Dates.DateTime(2013,7,31)
+@test Dates.lastdayof(aug,Dates.Month) == Dates.DateTime(2013,8,31)
+@test Dates.lastdayof(sep,Dates.Month) == Dates.DateTime(2013,9,30)
+@test Dates.lastdayof(oct,Dates.Month) == Dates.DateTime(2013,10,31)
+@test Dates.lastdayof(nov,Dates.Month) == Dates.DateTime(2013,11,30)
+@test Dates.lastdayof(dec,Dates.Month) == Dates.DateTime(2013,12,31)
 
-@test Dates.lastdayofmonth(Date(jan)) == Dates.Date(2013,1,31)
-@test Dates.lastdayofmonth(Date(feb)) == Dates.Date(2013,2,28)
-@test Dates.lastdayofmonth(Date(mar)) == Dates.Date(2013,3,31)
-@test Dates.lastdayofmonth(Date(apr)) == Dates.Date(2013,4,30)
-@test Dates.lastdayofmonth(Date(may)) == Dates.Date(2013,5,31)
-@test Dates.lastdayofmonth(Date(jun)) == Dates.Date(2013,6,30)
-@test Dates.lastdayofmonth(Date(jul)) == Dates.Date(2013,7,31)
-@test Dates.lastdayofmonth(Date(aug)) == Dates.Date(2013,8,31)
-@test Dates.lastdayofmonth(Date(sep)) == Dates.Date(2013,9,30)
-@test Dates.lastdayofmonth(Date(oct)) == Dates.Date(2013,10,31)
-@test Dates.lastdayofmonth(Date(nov)) == Dates.Date(2013,11,30)
-@test Dates.lastdayofmonth(Date(dec)) == Dates.Date(2013,12,31)
+@test Dates.lastdayof(Date(jan),Dates.Month) == Dates.Date(2013,1,31)
+@test Dates.lastdayof(Date(feb),Dates.Month) == Dates.Date(2013,2,28)
+@test Dates.lastdayof(Date(mar),Dates.Month) == Dates.Date(2013,3,31)
+@test Dates.lastdayof(Date(apr),Dates.Month) == Dates.Date(2013,4,30)
+@test Dates.lastdayof(Date(may),Dates.Month) == Dates.Date(2013,5,31)
+@test Dates.lastdayof(Date(jun),Dates.Month) == Dates.Date(2013,6,30)
+@test Dates.lastdayof(Date(jul),Dates.Month) == Dates.Date(2013,7,31)
+@test Dates.lastdayof(Date(aug),Dates.Month) == Dates.Date(2013,8,31)
+@test Dates.lastdayof(Date(sep),Dates.Month) == Dates.Date(2013,9,30)
+@test Dates.lastdayof(Date(oct),Dates.Month) == Dates.Date(2013,10,31)
+@test Dates.lastdayof(Date(nov),Dates.Month) == Dates.Date(2013,11,30)
+@test Dates.lastdayof(Date(dec),Dates.Month) == Dates.Date(2013,12,31)
 
-@test Dates.firstdayofmonth(jan) == Dates.DateTime(2013,1,1)
-@test Dates.firstdayofmonth(feb) == Dates.DateTime(2013,2,1)
-@test Dates.firstdayofmonth(mar) == Dates.DateTime(2013,3,1)
-@test Dates.firstdayofmonth(apr) == Dates.DateTime(2013,4,1)
-@test Dates.firstdayofmonth(may) == Dates.DateTime(2013,5,1)
-@test Dates.firstdayofmonth(jun) == Dates.DateTime(2013,6,1)
-@test Dates.firstdayofmonth(jul) == Dates.DateTime(2013,7,1)
-@test Dates.firstdayofmonth(aug) == Dates.DateTime(2013,8,1)
-@test Dates.firstdayofmonth(sep) == Dates.DateTime(2013,9,1)
-@test Dates.firstdayofmonth(oct) == Dates.DateTime(2013,10,1)
-@test Dates.firstdayofmonth(nov) == Dates.DateTime(2013,11,1)
-@test Dates.firstdayofmonth(dec) == Dates.DateTime(2013,12,1)
+@test Dates.firstdayof(jan,Dates.Month) == Dates.DateTime(2013,1,1)
+@test Dates.firstdayof(feb,Dates.Month) == Dates.DateTime(2013,2,1)
+@test Dates.firstdayof(mar,Dates.Month) == Dates.DateTime(2013,3,1)
+@test Dates.firstdayof(apr,Dates.Month) == Dates.DateTime(2013,4,1)
+@test Dates.firstdayof(may,Dates.Month) == Dates.DateTime(2013,5,1)
+@test Dates.firstdayof(jun,Dates.Month) == Dates.DateTime(2013,6,1)
+@test Dates.firstdayof(jul,Dates.Month) == Dates.DateTime(2013,7,1)
+@test Dates.firstdayof(aug,Dates.Month) == Dates.DateTime(2013,8,1)
+@test Dates.firstdayof(sep,Dates.Month) == Dates.DateTime(2013,9,1)
+@test Dates.firstdayof(oct,Dates.Month) == Dates.DateTime(2013,10,1)
+@test Dates.firstdayof(nov,Dates.Month) == Dates.DateTime(2013,11,1)
+@test Dates.firstdayof(dec,Dates.Month) == Dates.DateTime(2013,12,1)
 
-@test Dates.firstdayofmonth(Date(jan)) == Dates.Date(2013,1,1)
-@test Dates.firstdayofmonth(Date(feb)) == Dates.Date(2013,2,1)
-@test Dates.firstdayofmonth(Date(mar)) == Dates.Date(2013,3,1)
-@test Dates.firstdayofmonth(Date(apr)) == Dates.Date(2013,4,1)
-@test Dates.firstdayofmonth(Date(may)) == Dates.Date(2013,5,1)
-@test Dates.firstdayofmonth(Date(jun)) == Dates.Date(2013,6,1)
-@test Dates.firstdayofmonth(Date(jul)) == Dates.Date(2013,7,1)
-@test Dates.firstdayofmonth(Date(aug)) == Dates.Date(2013,8,1)
-@test Dates.firstdayofmonth(Date(sep)) == Dates.Date(2013,9,1)
-@test Dates.firstdayofmonth(Date(oct)) == Dates.Date(2013,10,1)
-@test Dates.firstdayofmonth(Date(nov)) == Dates.Date(2013,11,1)
-@test Dates.firstdayofmonth(Date(dec)) == Dates.Date(2013,12,1)
+@test Dates.firstdayof(Date(jan),Dates.Month) == Dates.Date(2013,1,1)
+@test Dates.firstdayof(Date(feb),Dates.Month) == Dates.Date(2013,2,1)
+@test Dates.firstdayof(Date(mar),Dates.Month) == Dates.Date(2013,3,1)
+@test Dates.firstdayof(Date(apr),Dates.Month) == Dates.Date(2013,4,1)
+@test Dates.firstdayof(Date(may),Dates.Month) == Dates.Date(2013,5,1)
+@test Dates.firstdayof(Date(jun),Dates.Month) == Dates.Date(2013,6,1)
+@test Dates.firstdayof(Date(jul),Dates.Month) == Dates.Date(2013,7,1)
+@test Dates.firstdayof(Date(aug),Dates.Month) == Dates.Date(2013,8,1)
+@test Dates.firstdayof(Date(sep),Dates.Month) == Dates.Date(2013,9,1)
+@test Dates.firstdayof(Date(oct),Dates.Month) == Dates.Date(2013,10,1)
+@test Dates.firstdayof(Date(nov),Dates.Month) == Dates.Date(2013,11,1)
+@test Dates.firstdayof(Date(dec),Dates.Month) == Dates.Date(2013,12,1)
 
 # Test first day of week; 2014-01-06 is a Monday = 1st day of week
 a = Dates.Date(2014,1,6)
@@ -88,17 +88,17 @@ d = Dates.Date(2014,1,9)
 e = Dates.Date(2014,1,10)
 f = Dates.Date(2014,1,11)
 g = Dates.Date(2014,1,12)
-@test Dates.firstdayofweek(a) == a
-@test Dates.firstdayofweek(b) == a
-@test Dates.firstdayofweek(c) == a
-@test Dates.firstdayofweek(d) == a
-@test Dates.firstdayofweek(e) == a
-@test Dates.firstdayofweek(f) == a
-@test Dates.firstdayofweek(g) == a
+@test Dates.firstdayof(a,Dates.Week) == a
+@test Dates.firstdayof(b,Dates.Week) == a
+@test Dates.firstdayof(c,Dates.Week) == a
+@test Dates.firstdayof(d,Dates.Week) == a
+@test Dates.firstdayof(e,Dates.Week) == a
+@test Dates.firstdayof(f,Dates.Week) == a
+@test Dates.firstdayof(g,Dates.Week) == a
 # Test firstdayofweek over the course of the year
 dt = a
 for i = 0:364
-    @test Dates.firstdayofweek(dt) == a + Dates.Week(div(i,7))
+    @test Dates.firstdayof(dt,Dates.Week) == a + Dates.Week(div(i,7))
     dt += Dates.Day(1)
 end
 a = Dates.DateTime(2014,1,6)
@@ -108,19 +108,19 @@ d = Dates.DateTime(2014,1,9)
 e = Dates.DateTime(2014,1,10)
 f = Dates.DateTime(2014,1,11)
 g = Dates.DateTime(2014,1,12)
-@test Dates.firstdayofweek(a) == a
-@test Dates.firstdayofweek(b) == a
-@test Dates.firstdayofweek(c) == a
-@test Dates.firstdayofweek(d) == a
-@test Dates.firstdayofweek(e) == a
-@test Dates.firstdayofweek(f) == a
-@test Dates.firstdayofweek(g) == a
+@test Dates.firstdayof(a,Dates.Week) == a
+@test Dates.firstdayof(b,Dates.Week) == a
+@test Dates.firstdayof(c,Dates.Week) == a
+@test Dates.firstdayof(d,Dates.Week) == a
+@test Dates.firstdayof(e,Dates.Week) == a
+@test Dates.firstdayof(f,Dates.Week) == a
+@test Dates.firstdayof(g,Dates.Week) == a
 dt = a
 for i = 0:364
-    @test Dates.firstdayofweek(dt) == a + Dates.Week(div(i,7))
+    @test Dates.firstdayof(dt,Dates.Week) == a + Dates.Week(div(i,7))
     dt += Dates.Day(1)
 end
-@test Dates.firstdayofweek(Dates.DateTime(2013,12,24)) == Dates.DateTime(2013,12,23)
+@test Dates.firstdayof(Dates.DateTime(2013,12,24),Dates.Week) == Dates.DateTime(2013,12,23)
 # Test last day of week; Sunday = last day of week
 # 2014-01-12 is a Sunday
 a = Dates.Date(2014,1,6)
@@ -130,16 +130,16 @@ d = Dates.Date(2014,1,9)
 e = Dates.Date(2014,1,10)
 f = Dates.Date(2014,1,11)
 g = Dates.Date(2014,1,12)
-@test Dates.lastdayofweek(a) == g
-@test Dates.lastdayofweek(b) == g
-@test Dates.lastdayofweek(c) == g
-@test Dates.lastdayofweek(d) == g
-@test Dates.lastdayofweek(e) == g
-@test Dates.lastdayofweek(f) == g
-@test Dates.lastdayofweek(g) == g
+@test Dates.lastdayof(a,Dates.Week) == g
+@test Dates.lastdayof(b,Dates.Week) == g
+@test Dates.lastdayof(c,Dates.Week) == g
+@test Dates.lastdayof(d,Dates.Week) == g
+@test Dates.lastdayof(e,Dates.Week) == g
+@test Dates.lastdayof(f,Dates.Week) == g
+@test Dates.lastdayof(g,Dates.Week) == g
 dt = a
 for i = 0:364
-    @test Dates.lastdayofweek(dt) == g + Dates.Week(div(i,7))
+    @test Dates.lastdayof(dt,Dates.Week) == g + Dates.Week(div(i,7))
     dt += Dates.Day(1)
 end
 a = Dates.DateTime(2014,1,6)
@@ -149,50 +149,50 @@ d = Dates.DateTime(2014,1,9)
 e = Dates.DateTime(2014,1,10)
 f = Dates.DateTime(2014,1,11)
 g = Dates.DateTime(2014,1,12)
-@test Dates.lastdayofweek(a) == g
-@test Dates.lastdayofweek(b) == g
-@test Dates.lastdayofweek(c) == g
-@test Dates.lastdayofweek(d) == g
-@test Dates.lastdayofweek(e) == g
-@test Dates.lastdayofweek(f) == g
-@test Dates.lastdayofweek(g) == g
+@test Dates.lastdayof(a,Dates.Week) == g
+@test Dates.lastdayof(b,Dates.Week) == g
+@test Dates.lastdayof(c,Dates.Week) == g
+@test Dates.lastdayof(d,Dates.Week) == g
+@test Dates.lastdayof(e,Dates.Week) == g
+@test Dates.lastdayof(f,Dates.Week) == g
+@test Dates.lastdayof(g,Dates.Week) == g
 dt = a
 for i = 0:364
-    @test Dates.lastdayofweek(dt) == g + Dates.Week(div(i,7))
+    @test Dates.lastdayof(dt,Dates.Week) == g + Dates.Week(div(i,7))
     dt += Dates.Day(1)
 end
-@test Dates.lastdayofweek(Dates.DateTime(2013,12,24)) == Dates.DateTime(2013,12,29)
+@test Dates.lastdayof(Dates.DateTime(2013,12,24),Dates.Week) == Dates.DateTime(2013,12,29)
 
-@test Dates.firstdayofquarter(Dates.Date(2014,2,2)) == Dates.Date(2014,1,1)
-@test Dates.firstdayofquarter(Dates.Date(2014,5,2)) == Dates.Date(2014,4,1)
-@test Dates.firstdayofquarter(Dates.Date(2014,8,2)) == Dates.Date(2014,7,1)
-@test Dates.firstdayofquarter(Dates.Date(2014,12,2)) == Dates.Date(2014,10,1)
+@test Dates.firstdayof(Dates.Date(2014,2,2),Dates.Quarter) == Dates.Date(2014,1,1)
+@test Dates.firstdayof(Dates.Date(2014,5,2),Dates.Quarter) == Dates.Date(2014,4,1)
+@test Dates.firstdayof(Dates.Date(2014,8,2),Dates.Quarter) == Dates.Date(2014,7,1)
+@test Dates.firstdayof(Dates.Date(2014,12,2),Dates.Quarter) == Dates.Date(2014,10,1)
 
-@test Dates.firstdayofquarter(Dates.DateTime(2014,2,2)) == Dates.DateTime(2014,1,1)
-@test Dates.firstdayofquarter(Dates.DateTime(2014,5,2)) == Dates.DateTime(2014,4,1)
-@test Dates.firstdayofquarter(Dates.DateTime(2014,8,2)) == Dates.DateTime(2014,7,1)
-@test Dates.firstdayofquarter(Dates.DateTime(2014,12,2)) == Dates.DateTime(2014,10,1)
+@test Dates.firstdayof(Dates.DateTime(2014,2,2),Dates.Quarter) == Dates.DateTime(2014,1,1)
+@test Dates.firstdayof(Dates.DateTime(2014,5,2),Dates.Quarter) == Dates.DateTime(2014,4,1)
+@test Dates.firstdayof(Dates.DateTime(2014,8,2),Dates.Quarter) == Dates.DateTime(2014,7,1)
+@test Dates.firstdayof(Dates.DateTime(2014,12,2),Dates.Quarter) == Dates.DateTime(2014,10,1)
 
-@test Dates.lastdayofquarter(Dates.Date(2014,2,2)) == Dates.Date(2014,3,31)
-@test Dates.lastdayofquarter(Dates.Date(2014,5,2)) == Dates.Date(2014,6,30)
-@test Dates.lastdayofquarter(Dates.Date(2014,8,2)) == Dates.Date(2014,9,30)
-@test Dates.lastdayofquarter(Dates.Date(2014,12,2)) == Dates.Date(2014,12,31)
+@test Dates.lastdayof(Dates.Date(2014,2,2),Dates.Quarter) == Dates.Date(2014,3,31)
+@test Dates.lastdayof(Dates.Date(2014,5,2),Dates.Quarter) == Dates.Date(2014,6,30)
+@test Dates.lastdayof(Dates.Date(2014,8,2),Dates.Quarter) == Dates.Date(2014,9,30)
+@test Dates.lastdayof(Dates.Date(2014,12,2),Dates.Quarter) == Dates.Date(2014,12,31)
 
-@test Dates.lastdayofquarter(Dates.DateTime(2014,2,2)) == Dates.DateTime(2014,3,31)
-@test Dates.lastdayofquarter(Dates.DateTime(2014,5,2)) == Dates.DateTime(2014,6,30)
-@test Dates.lastdayofquarter(Dates.DateTime(2014,8,2)) == Dates.DateTime(2014,9,30)
-@test Dates.lastdayofquarter(Dates.DateTime(2014,12,2)) == Dates.DateTime(2014,12,31)
+@test Dates.lastdayof(Dates.DateTime(2014,2,2),Dates.Quarter) == Dates.DateTime(2014,3,31)
+@test Dates.lastdayof(Dates.DateTime(2014,5,2),Dates.Quarter) == Dates.DateTime(2014,6,30)
+@test Dates.lastdayof(Dates.DateTime(2014,8,2),Dates.Quarter) == Dates.DateTime(2014,9,30)
+@test Dates.lastdayof(Dates.DateTime(2014,12,2),Dates.Quarter) == Dates.DateTime(2014,12,31)
 
 first = Dates.Date(2014,1,1)
 last = Dates.Date(2014,12,31)
 for i = 0:364
     dt = first + Dates.Day(i)
 
-    @test Dates.firstdayofyear(dt) == first
-    @test Dates.firstdayofyear(DateTime(dt)) == DateTime(first)
+    @test Dates.firstdayof(dt,Dates.Year) == first
+    @test Dates.firstdayof(DateTime(dt),Dates.Year) == DateTime(first)
 
-    @test Dates.lastdayofyear(dt) == last
-    @test Dates.lastdayofyear(DateTime(dt)) == DateTime(last)
+    @test Dates.lastdayof(dt,Dates.Year) == last
+    @test Dates.lastdayof(DateTime(dt),Dates.Year) == DateTime(last)
 end
 
 # Adjusters
@@ -444,7 +444,7 @@ observed = Dates.recur(OBSERVEDHOLIDAYS,Dates.Date(1999):Dates.Date(2000))
 end) == 251
 
 # First day of the next month for each day of 2014
-@test length([Dates.firstdayofmonth(i+Dates.Month(1))
+@test length([Dates.firstdayof(i+Dates.Month(1),Dates.Month)
     for i in Dates.Date(2014):Dates.Date(2014,12,31)]) == 365
 
 # From those goofy email forwards claiming a "special, lucky month"
