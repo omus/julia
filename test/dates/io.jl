@@ -311,3 +311,6 @@ dt = Dates.DateTime(2014,8,23,17,22,15)
 @test Dates.format(Dates.DateTime(2014,10,31,0,0,0,9),Dates.RFC1123Format) == "Fri, 31 Oct 2014 00:00:00"
 @test Dates.format(Dates.DateTime(2014,11,2,0,0,0,9),Dates.RFC1123Format) == "Sun, 02 Nov 2014 00:00:00"
 @test Dates.format(Dates.DateTime(2014,12,5,0,0,0,9),Dates.RFC1123Format) == "Fri, 05 Dec 2014 00:00:00"
+
+# Issue #13644: Ensure that Dates.parse returns a Period array when no custom slots are used.
+@test eltype(Dates.parse("1942-12-25T01:23:45", Dates.DateFormat("yyyy-mm-ddTHH:MM:SS", "english"))) == Dates.Period
