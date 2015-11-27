@@ -77,6 +77,17 @@ flush_cstdio() = ccall(:jl_flush_cstdio, Void, ())
 @unix_only systemsleep(s::Real) = ccall(:usleep, Int32, (UInt32,), round(UInt32,s*1e6))
 @windows_only systemsleep(s::Real) = (ccall(:Sleep, stdcall, Void, (UInt32,), round(UInt32,s*1e3)); return Int32(0))
 
+type TimevalStruct
+   sec::Int64
+   usec::Int64
+end
+
+function TimevalStruct()
+    tv = TimevalStruct(0,0)
+    ccall(:timeval_now, Int, (Ptr{TimevalStruct},), &tv)
+    return tv
+end
+
 type TmStruct
     sec::Int32
     min::Int32

@@ -29,30 +29,31 @@ extern "C" {
 #endif
 
 #if defined(_OS_WINDOWS_)
-static double floattime(void)
+int gettimeofday(struct timeval *tv, void *tz)
 {
-    struct timeb tstruct;
-
-    ftime(&tstruct);
-    return (double)tstruct.time + (double)tstruct.millitm/1.0e3;
+    struct timeb tb;
+    ftime(&tb);
+    now->tv_sec = tb.time;
+    now->tv_usec = tb.millitm * 1.0e3;
+    return 0;
 }
-#else
+#endif
+
 static double tv2float(struct timeval *tv)
 {
     return (double)tv->tv_sec + (double)tv->tv_usec/1.0e6;
 }
-#endif
+
+int timeval_now(struct timeval *now)
+{
+    return gettimeofday(now, NULL);
+}
 
 double clock_now(void)
 {
-#if defined(_OS_WINDOWS_)
-    return floattime();
-#else
     struct timeval now;
-
-    gettimeofday(&now, NULL);
+    timeval_now(&now);
     return tv2float(&now);
-#endif
 }
 
 void sleep_ms(int ms)
