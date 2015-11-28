@@ -79,12 +79,12 @@ flush_cstdio() = ccall(:jl_flush_cstdio, Void, ())
 
 type TimevalStruct
    sec::Int64
-   usec::Int64
+   usec::Int32
 end
 
 function TimevalStruct()
     tv = TimevalStruct(0,0)
-    ccall(:timeval_now, Int, (Ptr{TimevalStruct},), &tv)
+    ccall(:timeval_now, Cint, (Ref{TimevalStruct},), tv) == 0 || error("unable to determine current time")
     return tv
 end
 

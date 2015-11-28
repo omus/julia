@@ -22,7 +22,7 @@ datetime2unix(dt::DateTime) = (value(dt) - UNIXEPOCH)/1000.0
 function now()
     tv = Libc.TimevalStruct()
     tm = Libc.TmStruct(tv.sec)
-    return DateTime(tm.year+1900,tm.month+1,tm.mday,tm.hour,tm.min,tm.sec,floor(tv.usec/1e3))
+    return DateTime(tm.year+1900,tm.month+1,tm.mday,tm.hour,tm.min,tm.sec,div(tv.usec,1e3))
 end
 today() = Date(now())
 now(::Type{UTC}) = unix2datetime(time())

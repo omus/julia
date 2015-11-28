@@ -32,10 +32,12 @@ extern "C" {
 int gettimeofday(struct timeval *tv, void *tz)
 {
     struct timeb tb;
-    ftime(&tb);
-    now->tv_sec = tb.time;
-    now->tv_usec = tb.millitm * 1.0e3;
-    return 0;
+    int status = ftime(&tb);
+    if (status == 0) {
+        now->tv_sec = tb.time;
+        now->tv_usec = tb.millitm * 1e3;
+    }
+    return status;
 }
 #endif
 
