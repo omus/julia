@@ -33,8 +33,8 @@ int gettimeofday(struct timeval *tv, void *tz)
 {
     struct timeb tb;
     ftime(&tb);
-    now->tv_sec = tb.time;
-    now->tv_usec = tb.millitm * 1e3;
+    tv->tv_sec = tb.time;
+    tv->tv_usec = tb.millitm * 1e3;
     return 0;
 }
 #endif
