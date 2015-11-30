@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 #if defined(_OS_WINDOWS_)
-int gettimeofday(struct timeval *tv, void *tz)
+int gettimeofday(struct timeval *tv, void *tzp)
 {
     struct timeb tb;
     ftime(&tb);
