@@ -46,7 +46,7 @@ int jl_gettimeofday(struct jl_timeval *jtv)
 
 static double jtv2float(struct jl_timeval *jtv)
 {
-    return (double)jtv->sec + (double)jtv->usec/1.0e6;
+    return (double)jtv->sec + (double)jtv->usec*1.0e-6;
 }
 
 double clock_now(void)

@@ -83,10 +83,10 @@ type TimevalStruct
 end
 
 function TimevalStruct()
-    tv = TimevalStruct(0,0)
-    success = ccall(:jl_gettimeofday, Cint, (Ref{TimevalStruct},), tv) == 0
-    success || error("unable to determine current time")
-    return tv
+    tv = Ref{TimevalStruct}(TimevalStruct(0,0))
+    status = ccall(:jl_gettimeofday, Cint, (Ref{TimevalStruct},), tv)
+    status != 0 && error("unable to determine current time")
+    return tv[]
 end
 
 type TmStruct
