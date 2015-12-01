@@ -47,7 +47,7 @@
 @test typeof(Dates.today()) <: Dates.Date
 @test typeof(Dates.now(Dates.UTC)) <: Dates.DateTime
 
-withenv("TZ" => "UTC") do
+@unix_only withenv("TZ" => "UTC") do
     @test abs(Dates.now() - now(Dates.UTC)) < Dates.Second(1)
 end
 @test abs(Dates.now() - now(Dates.UTC)) < Dates.Hour(16)
