@@ -28,22 +28,27 @@
 extern "C" {
 #endif
 
-#if defined(_OS_WINDOWS_)
-JL_DLLEXPORT int gettimeofday(struct timeval *tv, void *tzp)
+JL_DLLEXPORT int jl_gettimeofday(struct jl_timeval *jtv)
 {
-    struct _timeb tb;
-    errno_t code = _ftime_s(&tb);
-    tv->tv_sec = tb.time;
-    tv->tv_usec = tb.millitm * 1000;
+#if defined(_OS_WINDOWS_)
+    struct __timeb64 tb;
+    errno_t code = _ftime64_s(&tb);
+    jtv->sec = tb.time;
+    jtv->usec = tb.millitm * 1000;
+#else
+    struct timeval tv;
+    int code = gettimeofday(&tv, NULL);
+    jtv->sec = tv.tv_sec;
+    jtv->usec = tv.tv_usec;
+#endif
     return code;
 }
-#endif
 
-double clock_now(void)
+JL_DLLEXPORT double clock_now(void)
 {
-    struct timeval now;
-    gettimeofday(&now, NULL);
-    return now.tv_sec + now.tv_usec/1.0e6;
+    struct jl_timeval now;
+    jl_gettimeofday(&now);
+    return now.sec + now.usec * 1e-6;
 }
 
 void sleep_ms(int ms)

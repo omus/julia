@@ -20,7 +20,7 @@ end
 # Returns unix seconds since 1970-01-01T00:00:00
 datetime2unix(dt::DateTime) = (value(dt) - UNIXEPOCH)/1000.0
 function now()
-    tv = Libc.TimevalStruct()
+    tv = Libc.TimeVal()
     tm = Libc.TmStruct(tv.sec)
     return DateTime(tm.year+1900,tm.month+1,tm.mday,tm.hour,tm.min,tm.sec,div(tv.usec,1000))
 end
