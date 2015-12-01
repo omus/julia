@@ -31,11 +31,14 @@ extern "C" {
 #if defined(_OS_WINDOWS_)
 DLLEXPORT int gettimeofday(struct timeval *tv, void *tzp)
 {
-    struct timeb tb;
-    ftime(&tb);
-    tv->tv_sec = tb.time;
-    tv->tv_usec = tb.millitm * 1e3;
-    return 0;
+    struct _timeb tb;
+    errno_t code = _ftime_s(&tb);
+    if(code == 0)
+    {
+        tv->tv_sec = tb.time;
+        tv->tv_usec = tb.millitm * 1e3;
+    }
+    return code;
 }
 #endif
 
