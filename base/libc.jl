@@ -155,7 +155,7 @@ end
 
 # system date in seconds
 time(tm::TmStruct) = Float64(ccall(:mktime, Int, (Ptr{TmStruct},), &tm))
-time() = ccall(:clock_now, Float64, ())
+time() = ccall(:jl_clock_now, Float64, ())
 
 ## process-related functions ##
 

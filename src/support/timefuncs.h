@@ -13,7 +13,7 @@ struct jl_timeval {
 };
 
 JL_DLLEXPORT int jl_gettimeofday(struct jl_timeval *jtv);
-JL_DLLEXPORT double clock_now(void);
+JL_DLLEXPORT double jl_clock_now(void);
 void sleep_ms(int ms);
 
 #ifdef __cplusplus

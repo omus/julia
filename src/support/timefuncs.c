@@ -44,7 +44,7 @@ JL_DLLEXPORT int jl_gettimeofday(struct jl_timeval *jtv)
     return code;
 }
 
-JL_DLLEXPORT double clock_now(void)
+JL_DLLEXPORT double jl_clock_now(void)
 {
     struct jl_timeval now;
     jl_gettimeofday(&now);
