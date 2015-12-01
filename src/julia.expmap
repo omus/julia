@@ -8,6 +8,7 @@
     ev_break;
     get_exename;
     getlocalip;
+    gettimeofday;
     int32hash;
     int64hash;
     int64to32hash;
@@ -26,7 +27,6 @@
     restore_signals;
     rl_clear_input;
     save_arg_area_loc;
-    timeval_now;
     u8_*;
     uv_*;
     add_library_mapping;

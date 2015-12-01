@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 #if defined(_OS_WINDOWS_)
-int gettimeofday(struct timeval *tv, void *tzp)
+DLLEXPORT int gettimeofday(struct timeval *tv, void *tzp)
 {
     struct timeb tb;
     ftime(&tb);
@@ -44,15 +44,10 @@ static double tv2float(struct timeval *tv)
     return (double)tv->tv_sec + (double)tv->tv_usec/1.0e6;
 }
 
-int timeval_now(struct timeval *now)
-{
-    return gettimeofday(now, NULL);
-}
-
 double clock_now(void)
 {
     struct timeval now;
-    timeval_now(&now);
+    gettimeofday(&now, NULL);
     return tv2float(&now);
 }
 

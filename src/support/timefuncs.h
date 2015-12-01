@@ -7,7 +7,6 @@
 extern "C" {
 #endif
 
-DLLEXPORT int timeval_now(struct timeval *now);
 DLLEXPORT double clock_now(void);
 void sleep_ms(int ms);
 

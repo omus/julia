@@ -84,7 +84,8 @@ end
 
 function TimevalStruct()
     tv = TimevalStruct(0,0)
-    ccall(:timeval_now, Cint, (Ref{TimevalStruct},), tv) == 0 || error("unable to determine current time")
+    success = ccall(:gettimeofday, Cint, (Ref{TimevalStruct}, Ref{Void}), tv, C_NULL) == 0
+    success || error("unable to determine current time")
     return tv
 end
 
