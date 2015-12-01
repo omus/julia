@@ -78,13 +78,13 @@ flush_cstdio() = ccall(:jl_flush_cstdio, Void, ())
 @windows_only systemsleep(s::Real) = (ccall(:Sleep, stdcall, Void, (UInt32,), round(UInt32,s*1e3)); return Int32(0))
 
 type TimevalStruct
-   sec::Clong   # time_t
-   usec::Clong  # suseconds_t
+   sec::Int64
+   usec::Int64
 end
 
 function TimevalStruct()
     tv = TimevalStruct(0,0)
-    success = ccall(:gettimeofday, Cint, (Ref{TimevalStruct}, Ref{Void}), tv, C_NULL) == 0
+    success = ccall(:jl_gettimeofday, Cint, (Ref{TimevalStruct},), tv) == 0
     success || error("unable to determine current time")
     return tv
 end

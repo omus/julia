@@ -7,6 +7,12 @@
 extern "C" {
 #endif
 
+struct jl_timeval {
+	long long sec;    /* seconds */
+	long long usec;   /* microseconds */
+};
+
+DLLEXPORT int jl_gettimeofday(struct jl_timeval *jtv);
 DLLEXPORT double clock_now(void);
 void sleep_ms(int ms);
 

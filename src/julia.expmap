@@ -8,7 +8,6 @@
     ev_break;
     get_exename;
     getlocalip;
-    gettimeofday;
     int32hash;
     int64hash;
     int64to32hash;
