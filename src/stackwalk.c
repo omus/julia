@@ -85,7 +85,7 @@ size_t rec_backtrace(uintptr_t *data, size_t maxsize)
 }
 
 static jl_value_t *array_ptr_void_type = NULL;
-JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp)
+JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp, int maxunwind)
 {
     jl_svec_t *tp = NULL;
     jl_array_t *ip = NULL;
@@ -97,7 +97,7 @@ JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp)
     }
     ip = jl_alloc_array_1d(array_ptr_void_type, 0);
     sp = returnsp ? jl_alloc_array_1d(array_ptr_void_type, 0) : NULL;
-    const size_t maxincr = 1000;
+    size_t maxincr = maxunwind < 0 || maxunwind > 1000 ? 1000 : (size_t)((unsigned) maxunwind);
     bt_context_t context;
     bt_cursor_t cursor;
     memset(&context, 0, sizeof(context));
@@ -110,9 +110,11 @@ JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp)
             n = jl_unw_stepn(&cursor, (uintptr_t*)jl_array_data(ip) + offset,
                     returnsp ? (uintptr_t*)jl_array_data(sp) + offset : NULL, maxincr);
             offset += maxincr;
-        } while (n > maxincr);
-        jl_array_del_end(ip, maxincr - n);
-        if (returnsp) jl_array_del_end(sp, maxincr - n);
+        } while (n > maxincr && (maxunwind < 0 || maxunwind > 1000));
+        if (n < maxincr) {
+            jl_array_del_end(ip, maxincr - n);
+            if (returnsp) jl_array_del_end(sp, maxincr - n);
+        }
     }
     jl_value_t *bt = returnsp ? (jl_value_t*)jl_svec2(ip, sp) : (jl_value_t*)ip;
     JL_GC_POP();
