@@ -56,14 +56,18 @@ macro deprecate(old,new)
     end
 end
 
+const have_dep_warned = Set()
+
 function depwarn(msg, funcsym)
     opts = JLOptions()
     if opts.depwarn == 1  # raise a warning
-        ln = Int(unsafe_load(cglobal(:jl_lineno, Cint)))
         fn = String(unsafe_load(cglobal(:jl_filename, Ptr{Cchar})))
+        key = hash(string(fn, msg))
+        (key in have_dep_warned) && return
+        push!(have_dep_warned, key)
+        ln = Int(unsafe_load(cglobal(:jl_lineno, Cint)))
         bt = backtrace()
-        caller = firstcaller(bt, funcsym)
-        warn(msg, once=(caller != C_NULL), key=caller, bt=bt, filename=fn, lineno=ln)
+        warn(msg, bt=bt, filename=fn, lineno=ln)
     elseif opts.depwarn == 2  # raise an error
         throw(ErrorException(msg))
     end
