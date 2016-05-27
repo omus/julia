@@ -58,38 +58,25 @@ end
 
 function depwarn(msg, funcsym)
     opts = JLOptions()
-    if opts.depwarn > 0
+    if opts.depwarn == 1  # raise a warning
         ln = Int(unsafe_load(cglobal(:jl_lineno, Cint)))
         fn = String(unsafe_load(cglobal(:jl_filename, Ptr{Cchar})))
         bt = backtrace()
         caller = firstcaller(bt, funcsym)
-        if opts.depwarn == 1 # raise a warning
-            warn(msg, once=(caller != C_NULL), key=caller, bt=bt,
-                 filename=fn, lineno=ln)
-        elseif opts.depwarn == 2 # raise an error
-            throw(ErrorException(msg))
-        end
+        warn(msg, once=(caller != C_NULL), key=caller, bt=bt, filename=fn, lineno=ln)
+    elseif opts.depwarn == 2  # raise an error
+        throw(ErrorException(msg))
     end
 end
 
 function firstcaller(bt::Array{Ptr{Void},1}, funcsym::Symbol)
     # Identify the calling line
-    i = 1
-    while i <= length(bt)
+    for i in 1:length(bt)
         lkups = StackTraces.lookup(bt[i])
-        i += 1
         for lkup in lkups
-            if lkup === StackTraces.UNKNOWN
-                continue
-            end
-            if lkup.func == funcsym
-                @goto found
-            end
+            lkup === StackTraces.UNKNOWN && continue
+            lkup.func == funcsym && return bt[i]
         end
-    end
-    @label found
-    if i <= length(bt)
-        return bt[i]
     end
     return C_NULL
 end
