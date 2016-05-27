@@ -61,24 +61,10 @@ function depwarn(msg, funcsym)
     if opts.depwarn == 1  # raise a warning
         ln = Int(unsafe_load(cglobal(:jl_lineno, Cint)))
         fn = String(unsafe_load(cglobal(:jl_filename, Ptr{Cchar})))
-        bt = backtrace()
-        caller = firstcaller(bt, funcsym)
-        warn(msg, once=(caller != C_NULL), key=caller, bt=bt, filename=fn, lineno=ln)
+        warn(msg, once=True, key="$fn:$ln", filename=fn, lineno=ln)
     elseif opts.depwarn == 2  # raise an error
         throw(ErrorException(msg))
     end
-end
-
-function firstcaller(bt::Array{Ptr{Void},1}, funcsym::Symbol)
-    # Identify the calling line
-    for i in 1:length(bt)
-        lkups = StackTraces.lookup(bt[i])
-        for lkup in lkups
-            lkup === StackTraces.UNKNOWN && continue
-            lkup.func == funcsym && return bt[i]
-        end
-    end
-    return C_NULL
 end
 
 deprecate(s::Symbol) = deprecate(current_module(), s)
