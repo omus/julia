@@ -76,12 +76,23 @@ end
 
 function firstcaller(bt::Array{Ptr{Void},1}, funcsym::Symbol)
     # Identify the calling line
-    for i in 1:length(bt)
+    i = 1
+    len = length(bt)
+    while i <= len
         lkups = StackTraces.lookup(bt[i])
+        i += 1
         for lkup in lkups
-            lkup === StackTraces.UNKNOWN && continue
-            lkup.func == funcsym && return bt[i]
+            if lkup === StackTraces.UNKNOWN
+                continue
+            end
+            if lkup.func == funcsym
+                @goto found
+            end
         end
+    end
+    @label found
+    if i <= len
+        return bt[i]
     end
     return C_NULL
 end
