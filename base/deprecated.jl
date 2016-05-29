@@ -68,7 +68,7 @@ function depwarn(msg, funcsym)
             (key in have_dep_warned) && return
             push!(have_dep_warned, key)
         end
-        bt = backtrace()
+        bt = backtrace(5)
         caller = firstcaller(bt, funcsym)
         warn(msg, once=(caller != C_NULL), key=caller, bt=bt, filename=fn, lineno=ln)
     elseif opts.depwarn == 2  # raise an error

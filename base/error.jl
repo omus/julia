@@ -23,7 +23,7 @@ error(s...) = throw(Main.Base.ErrorException(Main.Base.string(s...)))
 
 rethrow() = ccall(:jl_rethrow, Bottom, ())
 rethrow(e) = ccall(:jl_rethrow_other, Bottom, (Any,), e)
-backtrace() = ccall(:jl_backtrace_from_here, Array{Ptr{Void},1}, (Int32,), false)
+backtrace(limit::Integer=-1) = ccall(:jl_backtrace_from_here, Array{Ptr{Void},1}, (Int32, Cssize_t), false, limit)
 catch_backtrace() = ccall(:jl_get_backtrace, Array{Ptr{Void},1}, ())
 
 ## keyword arg lowering generates calls to this ##
