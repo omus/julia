@@ -93,8 +93,7 @@ static const char opts[]  =
     " --math-mode={ieee,fast}   Disallow or enable unsafe floating point optimizations (overrides @fastmath declaration)\n\n"
 
     // error and warning options
-    " --depwarn={yes|no|error|fast}\n"
-    "                           Enable or disable syntax and method deprecation warnings (\"error\" turns warnings into errors)\n\n"
+    " --depwarn={yes|no|error}  Enable or disable syntax and method deprecation warnings (\"error\" turns warnings into errors)\n\n"
 
     // compiler output options
     " --output-o name           Generate an object file (including system image data)\n"
@@ -413,10 +412,8 @@ restart_switch:
                 jl_options.depwarn = JL_OPTIONS_DEPWARN_OFF;
             else if (!strcmp(optarg,"error"))
                 jl_options.depwarn = JL_OPTIONS_DEPWARN_ERROR;
-            else if (!strcmp(optarg,"fast"))
-                jl_options.depwarn = JL_OPTIONS_DEPWARN_FAST;
             else
-                jl_errorf("julia: invalid argument to --depwarn={yes|no|error|fast} (%s)", optarg);
+                jl_errorf("julia: invalid argument to --depwarn={yes|no|error} (%s)", optarg);
             break;
         case opt_inline:
             if (!strcmp(optarg,"yes"))
