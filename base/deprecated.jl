@@ -60,12 +60,14 @@ const have_dep_warned = Set()
 
 function depwarn(msg, funcsym)
     opts = JLOptions()
-    if opts.depwarn == 1  # raise a warning
+    if opts.depwarn == 1 || opts.depwarn == 3  # raise a warning
         fn = String(unsafe_load(cglobal(:jl_filename, Ptr{Cchar})))
         ln = Int(unsafe_load(cglobal(:jl_lineno, Cint)))
-        key = hash(string(fn, ln, msg))
-        (key in have_dep_warned) && return
-        push!(have_dep_warned, key)
+        if opts.depwarn == 3
+            key = hash(string(fn, ln, msg))
+            (key in have_dep_warned) && return
+            push!(have_dep_warned, key)
+        end
         bt = backtrace()
         caller = firstcaller(bt, funcsym)
         warn(msg, once=(caller != C_NULL), key=caller, bt=bt, filename=fn, lineno=ln)
