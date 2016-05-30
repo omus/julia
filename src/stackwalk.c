@@ -121,8 +121,8 @@ JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp, int maxunwind, int
     sp = returnsp ? jl_alloc_array_1d(array_ptr_void_type, 0) : NULL;
     const size_t maxincr = 1000;
     // const size_t incr = maxunwind < 0 ? maxincr : (size_t)((unsigned) maxunwind);
-    const size_t incr = maxincr;
-    // const size_t incr = 1;
+    // const size_t incr = maxincr;
+    const size_t incr = 1;
     bt_context_t context;
     bt_cursor_t cursor;
     memset(&context, 0, sizeof(context));
