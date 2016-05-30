@@ -84,8 +84,30 @@ size_t rec_backtrace(uintptr_t *data, size_t maxsize)
     return rec_backtrace_ctx(data, maxsize, &context);
 }
 
+JL_DLLEXPORT int jl_num_frames(uintptr_t ip, int skipC)
+{
+    jl_frame_t *frames;
+    int n = jl_getFunctionInfo(&frames, ip, skipC, 0);
+    int count = 0;
+    if (skipC) {
+        for (int i = 0; i < n; i++) {
+            jl_frame_t frame = frames[i];
+            // jl_safe_printf("func_name = %s\n", frame.func_name);
+            if (!frame.fromC) count++;
+            free(frame.func_name);
+            free(frame.file_name);
+        }
+    }
+    else {
+        count = n;
+    }
+    // jl_safe_printf("count = %d/%d\n", count, n);
+    free(frames);
+    return count;
+}
+
 static jl_value_t *array_ptr_void_type = NULL;
-JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp, int maxunwind)
+JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp, int maxunwind, int skipC)
 {
     jl_svec_t *tp = NULL;
     jl_array_t *ip = NULL;
@@ -102,20 +124,35 @@ JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp, int maxunwind)
     bt_cursor_t cursor;
     memset(&context, 0, sizeof(context));
     jl_unw_get(&context);
+    int count = 0;
     if (jl_unw_init(&cursor, &context)) {
         size_t n = 0, offset = 0;
         do {
+            if (offset > 0 && count < maxunwind)
+                maxincr = 1;
+
             jl_array_grow_end(ip, maxincr);
             if (returnsp) jl_array_grow_end(sp, maxincr);
             n = jl_unw_stepn(&cursor, (uintptr_t*)jl_array_data(ip) + offset,
                     returnsp ? (uintptr_t*)jl_array_data(sp) + offset : NULL, maxincr);
+
+            if (maxunwind >= 0) {
+                jl_value_t** x = (jl_value_t**)((uintptr_t*)jl_array_data(ip) + offset);
+                for (int i = 0; i < n; i++)
+                    count += jl_num_frames((uintptr_t) x[i], skipC);
+            }
+
+            // jl_safe_printf("iter\n");
+
             offset += maxincr;
-        } while (n > maxincr && (maxunwind < 0 || maxunwind > 1000));
+        } while (n > maxincr && (maxunwind < 0 || count < maxunwind));
+
         if (n < maxincr) {
             jl_array_del_end(ip, maxincr - n);
             if (returnsp) jl_array_del_end(sp, maxincr - n);
         }
     }
+    // jl_safe_printf("total count: %d\n", count);
     jl_value_t *bt = returnsp ? (jl_value_t*)jl_svec2(ip, sp) : (jl_value_t*)ip;
     JL_GC_POP();
     return bt;

@@ -24,6 +24,18 @@ function get_bt_frames(functionname, bt)
     end
 end
 
+function count(pred, bt)
+    n = 0
+    for i = 1:length(bt)
+        for lkup in Base.StackTraces.lookup(bt[i])
+            if pred(lkup)
+                n += 1
+            end
+        end
+    end
+    return n
+end
+
 # same-file inline
 eval(Expr(:function, Expr(:call, :test_inline_1),
           Expr(:block, Expr(:line, 42, Symbol("backtrace.jl")),
@@ -64,6 +76,17 @@ catch err
     @test lkup[2].line == 99
     @test string(lkup[1].file) == absfilepath
     @test lkup[1].line == 111
+end
+
+let
+    @noinline f(n) = Base.backtrace(n)
+    @noinline g(n) = f(n)
+
+    not_from_c = lkup -> !lkup.from_c
+    @test count(not_from_c, f(1)) == 1
+    @test count(not_from_c, f(2)) >= 1
+    @test count(not_from_c, g(1)) == 1
+    @test count(not_from_c, g(2)) == 2
 end
 
 end # module

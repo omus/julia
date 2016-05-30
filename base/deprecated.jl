@@ -56,13 +56,15 @@ macro deprecate(old,new)
     end
 end
 
-@inline function depwarn(io::IO, msg, funcsym)
+function depwarn(io::IO, msg, funcsym)
     opts = JLOptions()
     if opts.depwarn == 1  # raise a warning
         fn = String(unsafe_load(cglobal(:jl_filename, Ptr{Cchar})))
         ln = Int(unsafe_load(cglobal(:jl_lineno, Cint)))
-        bt = backtrace(4)  # Limit backtrace to the parent of depwarn's caller
+        bt = backtrace(5)  # Limit backtrace to the parent of depwarn's caller
         caller = firstcaller(bt, funcsym)
+        # println(caller)
+        # println(firstcaller(backtrace(), funcsym))
         (caller in have_warned) && return
         warn(io, msg, once=(caller != C_NULL), key=caller, bt=backtrace(),
              filename=fn, lineno=ln)
@@ -72,6 +74,23 @@ end
 end
 depwarn(msg, funcsym) = depwarn(STDERR, msg, funcsym)
 
+# function depwarn(msg, funcsym, io::IO=STDERR)
+#     opts = JLOptions()
+#     if opts.depwarn == 1  # raise a warning
+#         fn = String(unsafe_load(cglobal(:jl_filename, Ptr{Cchar})))
+#         ln = Int(unsafe_load(cglobal(:jl_lineno, Cint)))
+#         bt = backtrace(6)  # Limit backtrace to the parent of depwarn's caller
+#         caller = firstcaller(bt, funcsym)
+#         println(caller)
+#         println(firstcaller(backtrace(), funcsym))
+#         (caller in have_warned) && return
+#         warn(io, msg, once=(caller != C_NULL), key=caller, bt=backtrace(),
+#              filename=fn, lineno=ln)
+#     elseif opts.depwarn == 2  # raise an error
+#         throw(ErrorException(msg))
+#     end
+# end
+
 function firstcaller(bt::Array{Ptr{Void},1}, funcsym::Symbol)
     # Identify the calling line
     i = 1
@@ -80,6 +99,7 @@ function firstcaller(bt::Array{Ptr{Void},1}, funcsym::Symbol)
         lkups = StackTraces.lookup(bt[i])
         i += 1
         for lkup in lkups
+            # println("$(i-1) $lkup $(lkup.from_c)")
             if lkup === StackTraces.UNKNOWN
                 continue
             end

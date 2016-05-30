@@ -9,35 +9,40 @@ let
     @test first(StackTraces.lookup(caller)).func == :g
 end
 
-let
-    io = IOBuffer()
-    @noinline function f1()
-        Base.depwarn(io, "1", :f)
-    end
-    @noinline function f2()
-        Base.depwarn(io, "1", :f)
-    end
-    @noinline function f3()
-        f1()
-        f2()
-    end
-    f3()  # This line should print two depwarn
+const _STDERR = Base.STDERR
+try
+    let
+        rd, rw = redirect_stderr()
+        @noinline function f1()
+            Base.depwarn("1", :f)
+        end
+        @noinline function f2()
+            Base.depwarn("1", :f)
+        end
+        @noinline function f3()
+            f1()
+            f2()
+        end
+        f3()  # This line should print two depwarn
 
-    seekstart(io)
-    @test length(matchall(r"WARNING", readstring(io))) == 2
-end
-
-let
-    io = IOBuffer()
-    @noinline function f1()
-        Base.depwarn(io, "f1 is deprecated", :f1)
+        seekstart(rd)
+        @test length(matchall(r"WARNING", readstring(rd))) == 2
     end
 
-    duration = @elapsed for i in 1:1000
-        f1()
-    end
+    let
+        rd, rw = redirect_stderr()
+        @noinline function f1()
+            Base.depwarn("f1 is deprecated", :f1)
+        end
 
-    seekstart(io)
-    @test length(matchall(r"WARNING", readstring(io))) == 1
-    @test duration < 2
+        duration = @elapsed for i in 1:1000
+            f1()
+        end
+
+        seekstart(rd)
+        @test length(matchall(r"WARNING", readstring(rd))) == 1
+        @test duration < 2
+    end
+finally
+    redirect_stderr(_STDERR)
 end
