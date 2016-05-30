@@ -63,9 +63,17 @@ function depwarn(io::IO, msg, funcsym)
         ln = Int(unsafe_load(cglobal(:jl_lineno, Cint)))
         bt = backtrace(5)  # Limit backtrace to the parent of depwarn's caller
         caller = firstcaller(bt, funcsym)
-        # println(caller)
-        # println(firstcaller(backtrace(), funcsym))
+        if caller == C_NULL
+            for i in 1:length(bt)
+                for lkup in Base.StackTraces.lookup(bt[i])
+                    println("$i $(Int(!lkup.from_c)) $lkup")
+                end
+            end
+            # show_backtrace(io, bt)
+            println("\nverified caller = $(firstcaller(backtrace(), funcsym))")
+        end
         (caller in have_warned) && return
+        println("caller = $caller")
         warn(io, msg, once=(caller != C_NULL), key=caller, bt=backtrace(),
              filename=fn, lineno=ln)
     elseif opts.depwarn == 2  # raise an error

@@ -90,9 +90,10 @@ JL_DLLEXPORT int jl_num_frames(uintptr_t ip, int skipC)
     int n = jl_getFunctionInfo(&frames, ip, skipC, 0);
     int count = 0;
     if (skipC) {
+        jl_safe_printf("frame count\n");
         for (int i = 0; i < n; i++) {
             jl_frame_t frame = frames[i];
-            // jl_safe_printf("func_name = %s\n", frame.func_name);
+            jl_safe_printf("%d %s\n", !frame.fromC, frame.func_name);
             if (!frame.fromC) count++;
             free(frame.func_name);
             free(frame.file_name);
@@ -119,40 +120,35 @@ JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp, int maxunwind, int
     }
     ip = jl_alloc_array_1d(array_ptr_void_type, 0);
     sp = returnsp ? jl_alloc_array_1d(array_ptr_void_type, 0) : NULL;
-    size_t maxincr = maxunwind < 0 || maxunwind > 1000 ? 1000 : (size_t)((unsigned) maxunwind);
+    const size_t maxincr = 1000;
+    const size_t incr = maxunwind < 0 ? maxincr : 1;
     bt_context_t context;
     bt_cursor_t cursor;
     memset(&context, 0, sizeof(context));
     jl_unw_get(&context);
     int count = 0;
     if (jl_unw_init(&cursor, &context)) {
-        size_t n = 0, offset = 0;
+        size_t n = 0, offset = 0, length = 0;
         do {
-            if (offset > 0 && count < maxunwind)
-                maxincr = 1;
-
-            jl_array_grow_end(ip, maxincr);
-            if (returnsp) jl_array_grow_end(sp, maxincr);
-            n = jl_unw_stepn(&cursor, (uintptr_t*)jl_array_data(ip) + offset,
-                    returnsp ? (uintptr_t*)jl_array_data(sp) + offset : NULL, maxincr);
-
-            if (maxunwind >= 0) {
-                jl_value_t** x = (jl_value_t**)((uintptr_t*)jl_array_data(ip) + offset);
-                for (int i = 0; i < n; i++)
-                    count += jl_num_frames((uintptr_t) x[i], skipC);
+            if (offset >= length) {
+                jl_array_grow_end(ip, maxincr);
+                if (returnsp) jl_array_grow_end(sp, maxincr);
+                length += maxincr;
             }
-
-            // jl_safe_printf("iter\n");
-
-            offset += maxincr;
-        } while (n > maxincr && (maxunwind < 0 || count < maxunwind));
-
-        if (n < maxincr) {
-            jl_array_del_end(ip, maxincr - n);
-            if (returnsp) jl_array_del_end(sp, maxincr - n);
-        }
+            n = jl_unw_stepn(&cursor, (uintptr_t*)jl_array_data(ip) + offset,
+                    returnsp ? (uintptr_t*)jl_array_data(sp) + offset : NULL, incr);
+            if (maxunwind >= 0) {
+                jl_value_t** stack = (jl_value_t**)((uintptr_t*)jl_array_data(ip) + offset);
+                for (int i = 0; i < n; i++)
+                    count += jl_num_frames((uintptr_t) stack[i], skipC);
+            }
+            offset += n - 1;
+        } while (n > incr && (maxunwind < 0 || count < maxunwind));
+        // jl_safe_printf("delta: %d - %d = %d\n", length, offset, length - offset);
+        jl_array_del_end(ip, length - offset);
+        if (returnsp) jl_array_del_end(sp, length - offset);
     }
-    // jl_safe_printf("total count: %d\n", count);
+    if (maxunwind >= 0) jl_safe_printf("total count: %d\n", count);
     jl_value_t *bt = returnsp ? (jl_value_t*)jl_svec2(ip, sp) : (jl_value_t*)ip;
     JL_GC_POP();
     return bt;
