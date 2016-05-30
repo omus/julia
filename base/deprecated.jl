@@ -64,7 +64,7 @@ function depwarn(msg, funcsym)
         bt = backtrace()
         caller = firstcaller(bt, funcsym)
         if opts.depwarn == 1 # raise a warning
-            warn(msg, once=(caller != C_NULL), key=caller, bt=bt,
+            warn(msg, once=false, key=caller, bt=bt,
                  filename=fn, lineno=ln)
         elseif opts.depwarn == 2 # raise an error
             throw(ErrorException(msg))
