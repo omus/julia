@@ -41,5 +41,16 @@ let
     @test duration/iterations < 0.002
 end
 
-# Pre-improvments 0.00025 (Mac) vs 0.00061 (Windows)
+# Pre-improvements
+# Mac OS X: 0.00025
+# Windows:  0.00061
 
+# For loop test (incr 1000)
+# Mac OS X: new 0.0014990471809999998 alt 0.000242912625
+# Windows:  new 0.002716              alt 0.000625
+
+# For loop test (incr 1)
+# Mac OS X: new 0.001858608892        alt 0.000287275577
+
+Something isn't adding up. I don't think the for loop test accurately tests the issue seen
+with building TimeZones
