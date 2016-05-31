@@ -56,10 +56,17 @@ macro deprecate(old,new)
     end
 end
 
-global depwarn_mode = 0
-function set_depwarn(mode)
-    global depwarn_mode
-    depwarn_mode = mode
+global dw_mode = :limit_safe
+global dw_limit = 1
+global dw_julia_only = true
+global dw_incr = 1000
+
+function set_depwarn(mode::Symbol, limit::Integer, julia_only::Bool, incr::Integer)
+    global dw_mode, dw_limit, dw_julia_only, dw_incr
+    dw_mode = mode
+    dw_limit = limit
+    dw_julia_only = julia_only
+    dw_incr = incr
 end
 
 function depwarn(io::IO, msg, funcsym)
@@ -69,27 +76,22 @@ function depwarn(io::IO, msg, funcsym)
         ln = Int(unsafe_load(cglobal(:jl_lineno, Cint)))
 
         # For testing
-        if depwarn_mode == 0
+        if dw_mode == :original
             bt = backtrace()
             caller = firstcaller(bt, funcsym)
-        elseif depwarn_mode == 1
-            sub_bt = ccall(:jl_backtrace_from_here, Array{Ptr{Void},1}, (Int32, Int32, Int32), false, 10, false)
+        elseif dw_mode == :limit
+            sub_bt = ccall(:jl_backtrace_from_here, Array{Ptr{Void},1}, (Int32, Int32, Int32, Cssize_t), false, dw_limit, dw_julia_only, dw_incr)
+            caller = firstcaller(sub_bt, funcsym)
+            (caller in have_warned) && return
+            bt = sub_bt
+        elseif dw_mode == :limit_safe
+            # sub_bt = backtrace(5)  # Limit backtrace to the parent of depwarn's caller
+            sub_bt = ccall(:jl_backtrace_from_here, Array{Ptr{Void},1}, (Int32, Int32, Int32, Cssize_t), false, dw_limit, dw_julia_only, dw_incr)
             caller = firstcaller(sub_bt, funcsym)
             if caller == C_NULL
                 bt = backtrace()
                 caller = firstcaller(bt, funcsym)
-                (caller in have_warned) && return
-            else
-                (caller in have_warned) && return
-                bt = backtrace()
-            end
-        else
-            sub_bt = backtrace(5)  # Limit backtrace to the parent of depwarn's caller
-            caller = firstcaller(sub_bt, funcsym)
-            if caller == C_NULL
-                bt = backtrace()
-                caller = firstcaller(bt, funcsym)
-                (caller in have_warned) && return
+
             else
                 (caller in have_warned) && return
                 bt = backtrace()

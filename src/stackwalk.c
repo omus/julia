@@ -106,7 +106,7 @@ JL_DLLEXPORT int jl_num_frames(uintptr_t ip, int skipC)
 }
 
 static jl_value_t *array_ptr_void_type = NULL;
-JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp, int maxunwind, int skipC)
+JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp, int maxunwind, int skipC, size_t incr)
 {
     int8_t gc_state = jl_gc_safe_enter();
     jl_svec_t *tp = NULL;
@@ -122,7 +122,8 @@ JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp, int maxunwind, int
     const size_t maxincr = 1000;
     // const size_t incr = maxunwind < 0 ? maxincr : (size_t)((unsigned) maxunwind);
     // const size_t incr = maxincr;
-    const size_t incr = 1;
+    // const size_t incr = 1;
+    incr = incr > maxincr ? maxincr : incr;
     bt_context_t context;
     bt_cursor_t cursor;
     memset(&context, 0, sizeof(context));
