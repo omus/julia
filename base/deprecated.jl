@@ -56,41 +56,45 @@ macro deprecate(old,new)
     end
 end
 
-function depwarn(io::IO, msg, funcsym, alt=false)
+function depwarn(io::IO, msg, funcsym, mode=0)
     opts = JLOptions()
     if opts.depwarn == 1  # raise a warning
         fn = String(unsafe_load(cglobal(:jl_filename, Ptr{Cchar})))
         ln = Int(unsafe_load(cglobal(:jl_lineno, Cint)))
 
         # For testing
-        if alt
+        if mode == 0
             bt = backtrace()
             caller = firstcaller(bt, funcsym)
-            warn(io, msg, once=(caller != C_NULL), key=caller, bt=bt,
-                filename=fn, lineno=ln)
-            return
-        end
-
-        bt = backtrace(5)  # Limit backtrace to the parent of depwarn's caller
-        caller = firstcaller(bt, funcsym)
-        if caller == C_NULL && funcsym == :f1
-            for i in 1:length(bt)
-                for lkup in Base.StackTraces.lookup(bt[i])
-                    println("$i $(Int(!lkup.from_c)) $lkup")
-                end
+        elseif mode == 1
+            sub_bt = ccall(:jl_backtrace_from_here, Array{Ptr{Void},1}, (Int32, Int32, Int32), false, 10, false)
+            caller = firstcaller(sub_bt, funcsym)
+            if caller == C_NULL
+                bt = backtrace()
+                caller = firstcaller(bt, funcsym)
+                (caller in have_warned) && return
+            else
+                (caller in have_warned) && return
+                bt = backtrace()
             end
-            # show_backtrace(io, bt)
-            println("\nverified caller = $(firstcaller(backtrace(), funcsym))")
+        else
+            sub_bt = backtrace(5)  # Limit backtrace to the parent of depwarn's caller
+            caller = firstcaller(sub_bt, funcsym)
+            if caller == C_NULL
+                bt = backtrace()
+                caller = firstcaller(bt, funcsym)
+                (caller in have_warned) && return
+            else
+                (caller in have_warned) && return
+                bt = backtrace()
+            end
         end
-        (caller in have_warned) && return
-        funcsym == :f1 && println("caller = $caller")
-        warn(io, msg, once=(caller != C_NULL), key=caller, bt=backtrace(),
-             filename=fn, lineno=ln)
+        warn(io, msg, once=(caller != C_NULL), key=caller, bt=bt, filename=fn, lineno=ln)
     elseif opts.depwarn == 2  # raise an error
         throw(ErrorException(msg))
     end
 end
-depwarn(msg, funcsym, alt=false) = depwarn(STDERR, msg, funcsym, alt)
+depwarn(msg, funcsym, mode=0) = depwarn(STDERR, msg, funcsym, mode)
 
 # function depwarn(msg, funcsym, io::IO=STDERR)
 #     opts = JLOptions()
