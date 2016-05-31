@@ -57,6 +57,11 @@ macro deprecate(old,new)
 end
 
 global depwarn_mode = 0
+function set_depwarn(mode)
+    global depwarn_mode
+    depwarn_mode = mode
+end
+
 function depwarn(io::IO, msg, funcsym)
     opts = JLOptions()
     if opts.depwarn == 1  # raise a warning
