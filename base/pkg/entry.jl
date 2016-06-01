@@ -541,12 +541,15 @@ function build!(pkgs::Vector, errs::Dict, seen::Set=Set())
     errfile = tempname()
     close(open(errfile, "w")) # create empty file
     code = """
+        println("Started \$(Base.DWOptions.calls) \$(Base.DWOptions.displayed)")
         empty!(Base.LOAD_PATH)
         append!(Base.LOAD_PATH, $(repr(Base.LOAD_PATH)))
         empty!(Base.LOAD_CACHE_PATH)
         append!(Base.LOAD_CACHE_PATH, $(repr(Base.LOAD_CACHE_PATH)))
         empty!(Base.DL_LOAD_PATH)
         append!(Base.DL_LOAD_PATH, $(repr(Base.DL_LOAD_PATH)))
+        Base.set_depwarn($(Base.DWOptions.limit), $(Base.DWOptions.julia_only), $(Base.DWOptions.incr))
+        show(Base.DWOptions)
         open("$(escape_string(errfile))", "a") do f
             for path_ in eachline(STDIN)
                 path = chomp(path_)
@@ -563,6 +566,7 @@ function build!(pkgs::Vector, errs::Dict, seen::Set=Set())
                 end
             end
         end
+        println("Finished \$(Base.DWOptions.calls), \$(Base.DWOptions.displayed)")
     """
     io, pobj = open(pipeline(detach(`$(Base.julia_cmd())
                                     --compilecache=$(Bool(Base.JLOptions().use_compilecache) ? "yes" : "no")

@@ -56,16 +56,39 @@ macro deprecate(old,new)
     end
 end
 
+type DWOptionsStruct
+    limit::Int
+    julia_only::Bool
+    incr::Int
+    calls::Int
+    failsafe::Int
+    displayed::Int
+end
+
+const DWOptions = DWOptionsStruct(5, true, 1, 0, 0, 0)
+
+function set_depwarn(limit::Integer, julia_only::Bool, incr::Integer)
+    DWOptions.limit = limit
+    DWOptions.julia_only = julia_only
+    DWOptions.incr = incr
+    nothing
+end
+
 function depwarn(io::IO, msg, funcsym; mode=-1)
     if mode < 0
         mode = JLOptions().depwarn
     end
+    DWOptions.calls += 1
     if mode == 1  # raise a warning
         caller = backtrace_caller(funcsym, 1)
+        if caller == C_NULL
+            DWOptions.failsafe += 1
+        end
         (caller in have_warned) && return
         bt = backtrace()
         ln = Int(unsafe_load(cglobal(:jl_lineno, Cint)))
         fn = String(unsafe_load(cglobal(:jl_filename, Ptr{Cchar})))
+        DWOptions.displayed += 1
         warn(io, msg, once=(caller != C_NULL), key=caller, bt=bt, filename=fn, lineno=ln)
     elseif mode == 2  # raise an error
         throw(ErrorException(msg))
