@@ -59,13 +59,13 @@ end
 type DWOptionsStruct
     mode::Symbol
     limit::Int
-    julia_only::Bool
+    julia_only::Int
     incr::Int
 end
 
 const DWOptions = DWOptionsStruct(:limit_safe, 1, true, 1000)
 
-function set_depwarn(mode::Symbol, limit::Integer, julia_only::Bool, incr::Integer)
+function set_depwarn(mode::Symbol, limit::Integer, julia_only::Int, incr::Integer)
     DWOptions.mode = mode
     DWOptions.limit = limit
     DWOptions.julia_only = julia_only
@@ -83,13 +83,13 @@ function depwarn(io::IO, msg, funcsym)
             bt = backtrace()
             caller = firstcaller(bt, funcsym)
         elseif DWOptions.mode == :limit
-            sub_bt = ccall(:jl_backtrace_from_here, Array{Ptr{Void},1}, (Int32, Int32, Int32, Cssize_t), false, DWOptions.limit, DWOptions.julia_only, DWOptions.incr)
+            sub_bt = backtrace(DWOptions.limit, DWOptions.julia_only, DWOptions.incr)
             caller = firstcaller(sub_bt, funcsym)
             (caller in have_warned) && return
             bt = sub_bt
         elseif DWOptions.mode == :limit_safe
             # sub_bt = backtrace(5)  # Limit backtrace to the parent of depwarn's caller
-            sub_bt = ccall(:jl_backtrace_from_here, Array{Ptr{Void},1}, (Int32, Int32, Int32, Cssize_t), false, DWOptions.limit, DWOptions.julia_only, DWOptions.incr)
+            sub_bt = backtrace(DWOptions.limit, DWOptions.julia_only, DWOptions.incr)
             caller = firstcaller(sub_bt, funcsym)
             if caller == C_NULL
                 bt = backtrace()

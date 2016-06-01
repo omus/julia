@@ -24,7 +24,9 @@ error(s...) = throw(Main.Base.ErrorException(Main.Base.string(s...)))
 rethrow() = ccall(:jl_rethrow, Bottom, ())
 rethrow(e) = ccall(:jl_rethrow_other, Bottom, (Any,), e)
 
-backtrace(limit::Integer) = ccall(:jl_backtrace_from_here, Array{Ptr{Void},1}, (Int32, Int32, Int32, Cssize_t), false, limit, true, 1000)
+function backtrace(limit::Integer, filter::Integer=1, chunk::Integer=1000)
+    ccall(:jl_backtrace_from_here, Array{Ptr{Void},1}, (Int32, Int32, Int32, Cssize_t), false, limit, filter, chunk)
+end
 backtrace() = ccall(:jl_backtrace_from_here, Array{Ptr{Void},1}, (Int32, Int32, Int32, Cssize_t), false, -1, false, 1000)
 catch_backtrace() = ccall(:jl_get_backtrace, Array{Ptr{Void},1}, ())
 

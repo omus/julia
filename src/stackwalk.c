@@ -140,14 +140,21 @@ JL_DLLEXPORT jl_value_t *jl_backtrace_from_here(int returnsp, int maxunwind, int
             n = jl_unw_stepn(&cursor, (uintptr_t*)jl_array_data(ip) + offset,
                     returnsp ? (uintptr_t*)jl_array_data(sp) + offset : NULL, incr);
             if (maxunwind >= 0) {
-                jl_value_t** stack = (jl_value_t**)((uintptr_t*)jl_array_data(ip) + offset);
-                // jl_safe_printf("count frames\n");
-                for (int i = 0; i < n; i++) {
-                    count += jl_num_frames((uintptr_t) stack[i], skipC);
-                    if (count >= maxunwind) {
-                        limit = offset + (size_t)((unsigned) i + 1);
-                        break;
+                if (skipC <= 1) {
+                    jl_value_t** stack = (jl_value_t**)((uintptr_t*)jl_array_data(ip) + offset);
+                    // jl_safe_printf("count frames\n");
+                    for (int i = 0; i < n; i++) {
+                        count += jl_num_frames((uintptr_t) stack[i], skipC);
+                        if (count >= maxunwind) {
+                            limit = offset + (size_t)((unsigned) i + 1);
+                            break;
+                        }
                     }
+                }
+                else {
+                    count += n;
+                    if (offset + n >= maxunwind)
+                        limit = offset + (size_t)((unsigned) n + 1);
                 }
             }
             offset += n - 1;
