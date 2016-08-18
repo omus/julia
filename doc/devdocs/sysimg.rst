@@ -17,10 +17,10 @@ This operation is useful for multiple reasons.  A user may:
 
 * Include a ``userimg.jl`` file that includes packages into the system image, thereby creating a system image that has packages embedded into the startup environment.
 
-Julia now ships with a script that automates the tasks of building the system image, wittingly named ``build_sysimg.jl`` that lives in ``DATAROOTDIR/julia/``.  That is, to include it into a current Julia session, type:
+Julia now ships with a script that automates the tasks of building the system image, wittingly named ``build_sysimg.jl`` that lives in ``JULIA_HOME/../../contrib/``.  That is, to include it into a current Julia session, type:
 ::
 
-   include(joinpath(JULIA_HOME, Base.DATAROOTDIR, "julia", "build_sysimg.jl"))
+   include(joinpath(JULIA_HOME, "..", "..", "contrib", "build_sysimg.jl"))
 
 This will include a ``build_sysimg()`` function:
 
