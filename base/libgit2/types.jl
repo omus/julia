@@ -1,6 +1,6 @@
 # This file is a part of Julia. License is MIT: http://julialang.org/license
 import Base.@kwdef
-import .Consts: GIT_SUBMODULE_IGNORE, GIT_MERGE_FILE_FAVOR, GIT_MERGE_FILE
+import .Consts: GIT_SUBMODULE_IGNORE, GIT_MERGE_FILE_FAVOR, GIT_MERGE_FILE, GIT_CONFIG
 
 const OID_RAWSZ = 20
 const OID_HEXSZ = OID_RAWSZ * 2
@@ -449,6 +449,23 @@ immutable FetchHead
     ismerge::Bool
 end
 
+"""
+    LibGit2.ConfigEntry
+
+Matches the [`git_config_entry`](https://libgit2.github.com/libgit2/#HEAD/type/git_config_entry) struct.
+"""
+@kwdef immutable ConfigEntry
+    name::Cstring
+    value::Cstring
+    level::GIT_CONFIG = Consts.CONFIG_LEVEL_DEFAULT
+    free::Ptr{Void}
+    payload::Ptr{Void}
+end
+
+function Base.show(io::IO, ce::ConfigEntry)
+    print(io, "ConfigEntry(\"", unsafe_string(ce.name), "\", \"", unsafe_string(ce.value), "\")")
+end
+
 # Abstract object types
 abstract AbstractGitObject
 Base.isempty(obj::AbstractGitObject) = (obj.ptr == C_NULL)
@@ -472,7 +489,8 @@ for (typ, reporef, sup, cname) in [
     (:GitCommit,     :GitRepo,  :GitObject,         :git_commit),
     (:GitBlob,       :GitRepo,  :GitObject,         :git_blob),
     (:GitTree,       :GitRepo,  :GitObject,         :git_tree),
-    (:GitTag,        :GitRepo,  :GitObject,         :git_tag)]
+    (:GitTag,        :GitRepo,  :GitObject,         :git_tag),
+    (:GitConfigIter, nothing,   :AbstractGitObject, :git_config_iterator)]
 
     if reporef === nothing
         @eval type $typ <: $sup

@@ -128,3 +128,30 @@ function set!(c::GitConfig, name::AbstractString, value::Int64)
     @check ccall((:git_config_set_int64, :libgit2), Cint,
                   (Ptr{Void}, Cstring, Cintmax_t), c.ptr, name, value)
 end
+
+function GitConfigIter(cfg::GitConfig)
+    ci_ptr = Ref{Ptr{Void}}(C_NULL)
+    @check ccall((:git_config_iterator_new, :libgit2), Cint,
+                  (Ptr{Ptr{Void}}, Ptr{Void}), ci_ptr, cfg.ptr)
+    return GitConfigIter(ci_ptr[])
+end
+
+function Base.start(ci::GitConfigIter)
+    entry_ptr_ptr = Ref{Ptr{ConfigEntry}}(C_NULL)
+    err = ccall((:git_config_next, :libgit2), Cint,
+                 (Ptr{Ptr{ConfigEntry}}, Ptr{Void}), entry_ptr_ptr, ci.ptr)
+    err != Int(Error.GIT_OK) && return (nothing, true)
+    return (unsafe_load(entry_ptr_ptr[]), false)
+end
+
+Base.done(ci::GitConfigIter, state) = state
+
+function Base.next(ci::GitConfigIter, state)
+    entry_ptr_ptr = Ref{Ptr{ConfigEntry}}(C_NULL)
+    err = ccall((:git_config_next, :libgit2), Cint,
+                 (Ptr{Ptr{ConfigEntry}}, Ptr{Void}), entry_ptr_ptr, ci.ptr)
+    err != Int(Error.GIT_OK) && return (nothing, true)
+    return (unsafe_load(entry_ptr_ptr[]), false)
+end
+
+Base.iteratorsize(::Type{GitConfigIter}) = Base.SizeUnknown()
