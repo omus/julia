@@ -136,6 +136,30 @@ function GitConfigIter(cfg::GitConfig)
     return GitConfigIter(ci_ptr[])
 end
 
+function GitConfigIter(cfg::GitConfig, name::AbstractString)
+    ci_ptr = Ref{Ptr{Void}}(C_NULL)
+    @check ccall((:git_config_multivar_iterator_new, :libgit2), Cint,
+                  (Ptr{Ptr{Void}}, Ptr{Void}, Cstring, Cstring),
+                  ci_ptr, cfg.ptr, name, C_NULL)
+    return GitConfigIter(ci_ptr[])
+end
+
+function GitConfigIter(cfg::GitConfig, name::AbstractString, value::Regex)
+    ci_ptr = Ref{Ptr{Void}}(C_NULL)
+    @check ccall((:git_config_multivar_iterator_new, :libgit2), Cint,
+                  (Ptr{Ptr{Void}}, Ptr{Void}, Cstring, Cstring),
+                  ci_ptr, cfg.ptr, name, value.pattern)
+    return GitConfigIter(ci_ptr[])
+end
+
+function GitConfigIter(cfg::GitConfig, name::Regex)
+    ci_ptr = Ref{Ptr{Void}}(C_NULL)
+    @check ccall((:git_config_iterator_glob_new, :libgit2), Cint,
+                  (Ptr{Ptr{Void}}, Ptr{Void}, Cstring),
+                  ci_ptr, cfg.ptr, name.pattern)
+    return GitConfigIter(ci_ptr[])
+end
+
 function Base.start(ci::GitConfigIter)
     entry_ptr_ptr = Ref{Ptr{ConfigEntry}}(C_NULL)
     err = ccall((:git_config_next, :libgit2), Cint,
