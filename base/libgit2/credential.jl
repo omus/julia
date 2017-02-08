@@ -1,16 +1,51 @@
 const CREDENTIAL_URL_REGEX = r"^(?<proto>.+?)://(?:(?<user>.+?)(?:\:(?<pass>.+?))?\@)?(?<host>[^/]+)(?<path>/.*)?$"
 
+
+type CredentialHelper
+    cmd::Cmd
+end
+
 type Credential
     protocol::String
     host::String
     path::String
     username::String
     password::String
-    helpers::Array{String}
+    helpers::Vector{CredentialHelper}
 end
 
+function Base.parse(::Type{CredentialHelper}, helper::AbstractString)
+    if startswith(helper, "!")
+        cmd_str = helper[2:end]
+    elseif isabspath(first(Base.shell_split(helper)))
+        cmd_str = helper
+    else
+        cmd_str = "git credential-$helper"
+    end
+
+    CredentialHelper(`$(Base.shell_split(cmd_str)...)`)
+end
+
+function run!(helper::CredentialHelper, operation::AbstractString, cred::Credential)
+    cmd = `$(helper.cmd) $operation`
+    println("CMD: $cmd")
+    output, input, p = readandwrite(cmd)
+
+    write(input, cred)
+    write(input, "\n")
+    close(input)
+
+    read!(output, cred)
+    close(output)
+
+    return cred
+end
+
+fill!(helper::CredentialHelper, cred::Credential) = run!(helper, "get", cred)
+
+
 function Credential(protocol::AbstractString, host::AbstractString, path::AbstractString, username::AbstractString, password::AbstractString)
-    Credential(protocol, host, path, username, password, String[])
+    Credential(protocol, host, path, username, password, CredentialHelper[])
 end
 
 Credential() = Credential("", "", "", "", "")
@@ -75,32 +110,6 @@ end
 
 read(io::IO, ::Type{Credential}) = read!(io, Credential())
 
-function credential_do!(cred::Credential, helper::AbstractString, operation::AbstractString)
-    if startswith(helper, "!")
-        cmd_str = helper[2:end]
-    elseif isabspath(first(Base.shell_split(helper)))
-        cmd_str = helper
-    else
-        cmd_str = "git credential-$helper"
-    end
-
-    cmd = `$(Base.shell_split(cmd_str)...) $operation`
-    return run_credential_helper!(cred, cmd)
-end
-
-function run_credential_helper!(cred::Credential, cmd::Cmd)
-    println("CMD: $cmd")
-    output, input, p = readandwrite(cmd)
-    write(input, cred)
-    write(input, "\n")
-    close(input)
-
-    read!(output, cred)
-    close(output)
-
-    return cred
-end
-
 function helpers!(cfg::LibGit2.GitConfig, cred::Credential)
     # Note: Should be quoting user input but `\Q` and `\E` isn't supported by libgit2
     # ci = LibGit2.GitConfigIter(cfg, Regex("credential(\\.$protocol://$host)?\\.helper"))
@@ -117,8 +126,10 @@ function helpers!(cfg::LibGit2.GitConfig, cred::Credential)
             !credential_match(want, cred) && continue
         end
 
+        println("CONFIG: $name = $value")
+
         if token == "helper"
-            push!(cred.helpers, value)
+            push!(cred.helpers, parse(CredentialHelper, value))
         elseif token == "username"
             if isempty(cred.username)
                 cred.username = value
@@ -127,7 +138,7 @@ function helpers!(cfg::LibGit2.GitConfig, cred::Credential)
     end
 end
 
-function credential_fill!(cred::Credential)
+function fill!(cred::Credential)
     if !isempty(cred.username) && !isempty(cred.password)
         return
     end
@@ -138,7 +149,7 @@ function credential_fill!(cred::Credential)
     # end
 
     for helper in cred.helpers
-        credential_do!(cred, helper, "get")
+        fill!(helper, cred)
 
         if !isempty(cred.username) && !isempty(cred.password)
             return cred
