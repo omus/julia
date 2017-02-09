@@ -1,5 +1,3 @@
-const CREDENTIAL_URL_REGEX = r"^(?<proto>.+?)://(?:(?<user>.+?)(?:\:(?<pass>.+?))?\@)?(?<host>[^/]+)(?<path>/.*)?$"
-
 type CredentialHelper
     cmd::Cmd
 end
@@ -60,14 +58,15 @@ function Base.parse(::Type{Credential}, url::AbstractString)
     # (1) proto://<host>/...
     # (2) proto://<user>@<host>/...
     # (3) proto://<user>:<pass>@<host>/...
-    m = match(CREDENTIAL_URL_REGEX, url)
+    m = match(URL_REGEX, url)
     m === nothing && error("Unable to parse URL")
+    host = m[:host] * (m[:port] != nothing ? ":$(m[:port])" : "")
     return Credential(
-        m[:proto],
-        m[:host],
-        m[:path] == nothing ? "" : m[:path],
-        m[:user] == nothing ? "" : m[:user],
-        m[:pass] == nothing ? "" : m[:pass],
+        m[:protocol],
+        host,
+        m[:path] === nothing ? "" : m[:path],
+        m[:user] === nothing ? "" : m[:user],
+        m[:password] === nothing ? "" : m[:password],
     )
 end
 
