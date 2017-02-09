@@ -176,7 +176,7 @@ end
 function fill!(helpers::AbstractArray{CredentialHelper}, cred::Credential)
     filled(cred) && return cred
     for helper in helpers
-        run!(helper, "store", cred)
+        run!(helper, "get", cred)
         filled(cred) && break
     end
     return cred
