@@ -143,6 +143,21 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
         schema, host, urlusername)
     isusedcreds = checkused!(creds)
 
+    # first try git-credentials if credentials support its usage
+    config = LibGit2.GitConfig()  # TODO: Not right
+
+    username = creds.user !== nothing ? creds.user : ""
+    userpass = creds.pass !== nothing ? creds.pass : ""
+
+    cred = Credential(schema, host, "", urlusername, "")
+    helpers = helpers!(config, cred)
+    fill!(helpers, cred)
+
+    if filled(cred)
+        username = cred.username
+        userpass = cred.password
+    else
+
     if creds.prompt_if_incorrect
         username = creds.user
         userpass = creds.pass
@@ -170,9 +185,11 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
         isusedcreds && return Cint(Error.EAUTH)
     end
 
+    end
+
     err = ccall((:git_cred_userpass_plaintext_new, :libgit2), Cint,
                  (Ptr{Ptr{Void}}, Cstring, Cstring),
-                 libgit2credptr, creds.user, creds.pass)
+                 libgit2credptr, username, userpass)
     err == 0 && return Cint(0)
 end
 
