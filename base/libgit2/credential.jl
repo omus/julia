@@ -1,6 +1,5 @@
 const CREDENTIAL_URL_REGEX = r"^(?<proto>.+?)://(?:(?<user>.+?)(?:\:(?<pass>.+?))?\@)?(?<host>[^/]+)(?<path>/.*)?$"
 
-
 type CredentialHelper
     cmd::Cmd
 end
@@ -11,7 +10,6 @@ type Credential
     path::String
     username::String
     password::String
-    helpers::Vector{CredentialHelper}
 end
 
 function Base.parse(::Type{CredentialHelper}, helper::AbstractString)
@@ -31,22 +29,26 @@ function run!(helper::CredentialHelper, operation::AbstractString, cred::Credent
     println("CMD: $cmd")
     output, input, p = readandwrite(cmd)
 
+    # Provide the helper with the credential information we know
     write(input, cred)
     write(input, "\n")
     close(input)
 
+    # Process the response from the helper
     read!(output, cred)
     close(output)
 
     return cred
 end
 
-Base.fill!(helper::CredentialHelper, cred::Credential) = run!(helper, "get", cred)
-
-
-function Credential(protocol::AbstractString, host::AbstractString, path::AbstractString, username::AbstractString, password::AbstractString)
-    Credential(protocol, host, path, username, password, CredentialHelper[])
+function run(helper::CredentialHelper, operation::AbstractString, cred::Credential)
+    updated_cred = deepcopy(cred)
+    run!(helper, operation, updated_cred)
 end
+
+# function Credential(protocol::AbstractString, host::AbstractString, path::AbstractString, username::AbstractString, password::AbstractString)
+#     Credential(protocol, host, path, username, password)
+# end
 
 Credential() = Credential("", "", "", "", "")
 
@@ -131,12 +133,17 @@ end
 
 read(io::IO, ::Type{Credential}) = read!(io, Credential())
 
+"""
+Credential helpers that are relevant to the given credentials. If the credentials do not
+contain a username one may be added at this step by the configuration.
+"""
 function helpers!(cfg::LibGit2.GitConfig, cred::Credential)
     # Note: Should be quoting user input but `\Q` and `\E` isn't supported by libgit2
     # ci = LibGit2.GitConfigIter(cfg, Regex("credential(\\.$protocol://$host)?\\.helper"))
 
     # Note: We will emulate the way Git reads the the configuration file which is from
     # top to bottom with no precedence on specificity.
+    helpers = CredentialHelper[]
     for entry in LibGit2.GitConfigIter(cfg, r"credential.*")
         name, value = unsafe_string(entry.name), unsafe_string(entry.value)
 
@@ -152,32 +159,52 @@ function helpers!(cfg::LibGit2.GitConfig, cred::Credential)
         println("CONFIG: $name = $value")
 
         if token == "helper"
-            push!(cred.helpers, parse(CredentialHelper, value))
+            push!(helpers, parse(CredentialHelper, value))
         elseif token == "username"
             if isempty(cred.username)
                 cred.username = value
             end
         end
     end
+
+    return helpers
 end
 
-function Base.fill!(cred::Credential)
-    if !isempty(cred.username) && !isempty(cred.password)
-        return
+function filled(cred::Credential)
+    !isempty(cred.username) && !isempty(cred.password)
+end
+
+function fill!(helpers::AbstractArray{CredentialHelper}, cred::Credential)
+    filled(cred) && return cred
+    for helper in helpers
+        run!(helper, "store", cred)
+        filled(cred) && break
     end
-
-    # TODO
-    # if isempty(cred.helpers)
-    #     helpers!(cfg, cred)
-    # end
-
-    for helper in cred.helpers
-        fill!(helper, cred)
-
-        if !isempty(cred.username) && !isempty(cred.password)
-            return cred
-        end
-    end
-
     return cred
+end
+
+function fill(helpers::AbstractArray{CredentialHelper}, cred::Credential)
+    new_cred = deepcopy(cred)
+    fill!(helpers, new_cred)
+end
+
+function approve(helpers::AbstractArray{CredentialHelper}, cred::Credential)
+    !filled(cred) && error("Credentials are not filled")
+    for helper in helpers
+        run(helper, "store", cred)
+    end
+end
+
+function reject(helpers::AbstractArray{CredentialHelper}, cred::Credential)
+    !filled(cred) && return
+
+    for helper in helpers
+        run(helper, "erase", cred)
+    end
+
+    Base.securezero!(cred.username)
+    Base.securezero!(cred.password)
+    cred.username = ""
+    cred.password = ""
+    nothing
 end
