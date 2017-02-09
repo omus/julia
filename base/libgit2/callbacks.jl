@@ -25,7 +25,7 @@ function mirror_callback(remote::Ptr{Ptr{Void}}, repo_ptr::Ptr{Void},
 end
 
 function authenticate_ssh(creds::SSHCredentials, libgit2credptr::Ptr{Ptr{Void}},
-        username_ptr, schema, host)
+        username_ptr, protocol, host)
     isusedcreds = checkused!(creds)
 
     errcls, errmsg = Error.last_error()
@@ -48,7 +48,7 @@ function authenticate_ssh(creds::SSHCredentials, libgit2credptr::Ptr{Ptr{Void}},
         # if username is not provided, then prompt for it
         username = if username_ptr == Cstring(C_NULL)
             uname = creds.user # check if credentials were already used
-            !isusedcreds ? uname : prompt("Username for '$schema$host'", default=uname)
+            !isusedcreds ? uname : prompt("Username for '$protocol://$host'", default=uname)
         else
             unsafe_string(username_ptr)
         end
@@ -66,7 +66,7 @@ function authenticate_ssh(creds::SSHCredentials, libgit2credptr::Ptr{Ptr{Void}},
                     keydefpath = defaultkeydefpath
                 else
                     keydefpath =
-                        prompt("Private key location for '$schema$username@$host'", default=keydefpath)
+                        prompt("Private key location for '$protocol://$username@$host'", default=keydefpath)
                 end
             end
             keydefpath
@@ -87,7 +87,7 @@ function authenticate_ssh(creds::SSHCredentials, libgit2credptr::Ptr{Ptr{Void}},
                     keydefpath = privatekey*".pub"
                 end
                 if !isfile(keydefpath)
-                    prompt("Public key location for '$schema$username@$host'", default=keydefpath)
+                    prompt("Public key location for '$protocol://$username@$host'", default=keydefpath)
                 end
             end
             keydefpath
@@ -140,7 +140,7 @@ function authenticate_ssh(creds::SSHCredentials, libgit2credptr::Ptr{Ptr{Void}},
 end
 
 function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::Ptr{Ptr{Void}},
-        schema, host, urlusername)
+        protocol, host, urlusername)
     isusedcreds = checkused!(creds)
 
     errcls, errmsg = Error.last_error()
@@ -159,8 +159,7 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
     if creds.use_credential_helper in ('Y', 'U')
         config = LibGit2.GitConfig()  # TODO: Not right
 
-        # Turn "https://" into "https"
-        cred = Credential(schema[1:(end - 3)], host, "", urlusername, "")
+        cred = Credential(protocol, host, "", urlusername, "")
         @show cred
         helpers = helpers!(config, cred)
         fill!(helpers, cred)
@@ -179,16 +178,16 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
     if !assigned && creds.prompt_if_incorrect
         if is_windows()
             if isempty(username) || isempty(userpass) || isusedcreds
-                res = Base.winprompt("Please enter your credentials for '$schema$host'", "Credentials required",
+                res = Base.winprompt("Please enter your credentials for '$protocol://$host'", "Credentials required",
                         username === nothing || isempty(username) ?
                         urlusername : username; prompt_username = true)
                 isnull(res) && return Cint(Error.EAUTH)
                 username, userpass = Base.get(res)
             end
         elseif isusedcreds
-            username = prompt("Username for '$schema$host'", default = isempty(username) ?
+            username = prompt("Username for '$protocol://$host'", default = isempty(username) ?
                 urlusername : username)
-            userpass = prompt("Password for '$schema$username@$host'", password=true)
+            userpass = prompt("Password for '$protocol://$username@$host'", password=true)
         end
         ((creds.user != username) || (creds.pass != userpass)) && reset!(creds)
         creds.user = username # save credentials
@@ -238,9 +237,9 @@ function credentials_callback(libgit2credptr::Ptr{Ptr{Void}}, url_ptr::Cstring,
     err = 0
     url = unsafe_string(url_ptr)
 
-    # parse url for schema and host
+    # parse url for protocol and host
     urlparts = match(URL_REGEX, url)
-    schema = urlparts[:scheme] === nothing ? "" : urlparts[:scheme] * "://"
+    protocol = urlparts[:protocol] === nothing ? "" : urlparts[:protocol]
     urlusername = urlparts[:user] === nothing ? "" : urlparts[:user]
     host = urlparts[:host]
 
@@ -252,14 +251,14 @@ function credentials_callback(libgit2credptr::Ptr{Ptr{Void}}, url_ptr::Cstring,
     if isset(allowed_types, Cuint(Consts.CREDTYPE_SSH_KEY))
         sshcreds = get_creds!(creds, "ssh://$host", reset!(SSHCredentials(true), -1))
         if isa(sshcreds, SSHCredentials)
-            err = authenticate_ssh(sshcreds, libgit2credptr, username_ptr, schema, host)
+            err = authenticate_ssh(sshcreds, libgit2credptr, username_ptr, protocol, host)
             err == 0 && return err
         end
     end
 
     if isset(allowed_types, Cuint(Consts.CREDTYPE_USERPASS_PLAINTEXT))
         defaultcreds = reset!(UserPasswordCredentials(true), -1)
-        credid = "$schema$host"
+        credid = "$protocol://$host"
         upcreds = get_creds!(creds, credid, defaultcreds)
         # If there were stored SSH credentials, but we ended up here that must
         # mean that something went wrong. Replace the SSH credentials by user/pass
@@ -268,7 +267,7 @@ function credentials_callback(libgit2credptr::Ptr{Ptr{Void}}, url_ptr::Cstring,
             upcreds = defaultcreds
             isa(Base.get(creds[]), CachedCredentials) && (Base.get(creds[]).creds[credid] = upcreds)
         end
-        return authenticate_userpass(upcreds, libgit2credptr, schema, host, urlusername)
+        return authenticate_userpass(upcreds, libgit2credptr, protocol, host, urlusername)
     end
 
     # No authentication method we support succeeded. The most likely cause is

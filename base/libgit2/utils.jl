@@ -1,11 +1,15 @@
 # This file is a part of Julia. License is MIT: http://julialang.org/license
 
 const URL_REGEX = r"""
-^(?:(?<scheme>https?|git|ssh)\:\/\/)?
-(?:(?<user>.*?)(?:\:(?<password>.*?))?@)?
+^(?:(?<protocol>https?|git|ssh)\:\/\/)?
+(?:
+    (?<user>.*?)
+    (?:\:(?<password>.*?))?
+    @
+)?
 (?<host>[A-Za-z0-9\-\.]+)
-(?:\:(?<port>\d+)?)?
-(?<path>.*?)$
+(?:\:(?<port>\d+))?
+(?<path>/.*?)?$
 """x
 
 function version()
