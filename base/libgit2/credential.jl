@@ -41,7 +41,7 @@ function run!(helper::CredentialHelper, operation::AbstractString, cred::Credent
     return cred
 end
 
-fill!(helper::CredentialHelper, cred::Credential) = run!(helper, "get", cred)
+Base.fill!(helper::CredentialHelper, cred::Credential) = run!(helper, "get", cred)
 
 
 function Credential(protocol::AbstractString, host::AbstractString, path::AbstractString, username::AbstractString, password::AbstractString)
@@ -69,6 +69,24 @@ function Base.parse(::Type{Credential}, url::AbstractString)
     )
 end
 
+function merge!(a::Credential, b::Credential)
+    !isempty(b.protocol) && (a.protocol = b.protocol)
+    !isempty(b.host) && (a.host = b.host)
+    !isempty(b.path) && (a.path = b.path)
+    !isempty(b.username) && (a.username = b.username)
+    !isempty(b.password) && (a.password = b.password)
+end
+
+function Base.:(==)(a::Credential, b::Credential)
+    return (
+        a.protocol == b.protocol &&
+        a.host == b.host &&
+        a.path == b.path &&
+        a.username == b.username &&
+        a.password == b.password
+    )
+end
+
 function credential_match(want::Credential, have::Credential)
     check(x, y) = isempty(x) || (!isempty(y) && x == y)
     return (
@@ -89,6 +107,7 @@ function Base.write(io::IO, cred::Credential)
 end
 
 function read!(io::IO, cred::Credential)
+    # https://git-scm.com/docs/git-credential#IOFMT
     while !eof(io)
         key, value = split(readline(io), '=')
 
@@ -97,11 +116,13 @@ function read!(io::IO, cred::Credential)
         elseif key == "host"
             cred.host = value
         elseif key == "path"
-            cred.path = vale
+            cred.path = value
         elseif key == "username"
             cred.username = value
         elseif key == "password"
             cred.password = value
+        elseif key == "url"
+            merge!(cred, parse(Credential, value))
         end
     end
 
@@ -114,6 +135,8 @@ function helpers!(cfg::LibGit2.GitConfig, cred::Credential)
     # Note: Should be quoting user input but `\Q` and `\E` isn't supported by libgit2
     # ci = LibGit2.GitConfigIter(cfg, Regex("credential(\\.$protocol://$host)?\\.helper"))
 
+    # Note: We will emulate the way Git reads the the configuration file which is from
+    # top to bottom with no precedence on specificity.
     for entry in LibGit2.GitConfigIter(cfg, r"credential.*")
         name, value = unsafe_string(entry.name), unsafe_string(entry.value)
 
@@ -138,7 +161,7 @@ function helpers!(cfg::LibGit2.GitConfig, cred::Credential)
     end
 end
 
-function fill!(cred::Credential)
+function Base.fill!(cred::Credential)
     if !isempty(cred.username) && !isempty(cred.password)
         return
     end
