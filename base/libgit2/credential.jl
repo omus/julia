@@ -89,13 +89,13 @@ function Base.:(==)(a::Credential, b::Credential)
     )
 end
 
-function credential_match(want::Credential, have::Credential)
-    check(x, y) = isempty(x) || (!isempty(y) && x == y)
+function Base.contains(haystack::Credential, needle::Credential)
+    field_contains(h, n) = isempty(n) || (!isempty(h) && h == n)
     return (
-        check(want.protocol, have.protocol) &&
-        check(want.host, have.host) &&
-        check(want.path, have.path) &&
-        check(want.username, have.username)
+        field_contains(haystack.protocol, needle.protocol) &&
+        field_contains(haystack.host, needle.host) &&
+        field_contains(haystack.path, needle.path) &&
+        field_contains(haystack.username, needle.username)
     )
 end
 
@@ -152,8 +152,7 @@ function helpers!(cfg::LibGit2.GitConfig, cred::Credential)
         token = SubString(name, b + 1)
 
         if !isempty(url)
-            want = parse(Credential, url)
-            !credential_match(want, cred) && continue
+            !contains(cred, parse(Credential, url)) && continue
         end
 
         println("CONFIG: $name = $value")

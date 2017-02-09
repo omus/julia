@@ -33,3 +33,9 @@ path=/c
 username=foo
 password=bar
 """
+
+@test contains(Credential(), Credential())
+@test contains(Credential("https", "", "", "", ""), Credential("", "", "", "", ""))
+@test !contains(Credential("", "", "", "", ""), Credential("https", "", "", "", ""))
+@test !contains(Credential("ssh", "", "", "", ""), Credential("https", "", "", "", ""))
+@test contains(Credential("https", "hostname", "", "user", ""), Credential("https", "hostname", "", "", ""))
