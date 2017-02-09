@@ -647,10 +647,11 @@ import Base.securezero!
 type UserPasswordCredentials <: AbstractCredentials
     user::String
     pass::String
+    use_credential_helper::Char
     prompt_if_incorrect::Bool    # Whether to allow interactive prompting if the credentials are incorrect
     count::Int                   # authentication failure protection count
     function UserPasswordCredentials(u::AbstractString,p::AbstractString,prompt_if_incorrect::Bool=false)
-        c = new(u,p,prompt_if_incorrect,3)
+        c = new(u,p,'Y',prompt_if_incorrect,3)
         finalizer(c, securezero!)
         return c
     end

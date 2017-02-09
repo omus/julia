@@ -143,26 +143,40 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
         schema, host, urlusername)
     isusedcreds = checkused!(creds)
 
-    # first try git-credentials if credentials support its usage
-    config = LibGit2.GitConfig()  # TODO: Not right
+    errcls, errmsg = Error.last_error()
+    if errcls != Error.None
+        # Check if we used ssh-agent
+        if creds.use_credential_helper == 'U'
+            creds.use_credential_helper = 'E' # disables git-credentials use in the future
+        end
+    end
 
     username = creds.user !== nothing ? creds.user : ""
     userpass = creds.pass !== nothing ? creds.pass : ""
+    assigned = false
 
-    cred = Credential(schema, host, "", urlusername, "")
-    helpers = helpers!(config, cred)
-    fill!(helpers, cred)
+    # first try git-credentials if credentials support its usage
+    if creds.use_credential_helper in ('Y', 'U')
+        config = LibGit2.GitConfig()  # TODO: Not right
 
-    if filled(cred)
-        username = cred.username
-        userpass = cred.password
-    else
+        # Turn "https://" into "https"
+        cred = Credential(schema[1:(end - 3)], host, "", urlusername, "")
+        @show cred
+        helpers = helpers!(config, cred)
+        fill!(helpers, cred)
 
-    if creds.prompt_if_incorrect
-        username = creds.user
-        userpass = creds.pass
-        (username === nothing) && (username = "")
-        (userpass === nothing) && (userpass = "")
+        @show cred
+
+        if filled(cred)
+            username = cred.username
+            userpass = cred.password
+            assigned = true
+        end
+
+        creds.use_credential_helper = 'U'  # used git-credentials only one time
+    end
+
+    if !assigned && creds.prompt_if_incorrect
         if is_windows()
             if isempty(username) || isempty(userpass) || isusedcreds
                 res = Base.winprompt("Please enter your credentials for '$schema$host'", "Credentials required",
@@ -181,10 +195,8 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
         creds.pass = userpass # save credentials
 
         isempty(username) && isempty(userpass) && return Cint(Error.EAUTH)
-    else
+    elseif !assigned
         isusedcreds && return Cint(Error.EAUTH)
-    end
-
     end
 
     err = ccall((:git_cred_userpass_plaintext_new, :libgit2), Cint,
