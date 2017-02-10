@@ -234,8 +234,12 @@ function credentials_callback(libgit2credptr::Ptr{Ptr{Void}}, url_ptr::Cstring,
     state = payload.state
     cred = payload.cred
 
+    # Update the credential state with the URL information. Make sure to wipe out the
+    # password so we do not infinite loop.
     if cred == Credential()
         cred = merge!(cred, Credential(protocol, host, "", urlusername, ""))
+    else
+        cred.password = ""
     end
 
     explicit = !isnull(creds) && !isa(Base.get(creds), CachedCredentials)
