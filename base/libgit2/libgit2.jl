@@ -205,10 +205,6 @@ function set_remote_url(path::AbstractString, url::AbstractString; remote::Abstr
     end
 end
 
-function make_payload{P<:AbstractCredentials}(payload::Nullable{P})
-    Ref{Nullable{AbstractCredentials}}(payload)
-end
-
 """
     fetch(repo::GitRepo; kwargs...)
 
@@ -237,7 +233,6 @@ function fetch{T<:AbstractString, P<:AbstractCredentials}(repo::GitRepo;
         GitRemoteAnon(repo, remoteurl)
     end
     try
-        payload = make_payload(payload)
         fo = FetchOptions(callbacks=RemoteCallbacks(credentials_cb(), payload))
         fetch(rmt, refspecs, msg="from $(url(rmt))", options = fo)
     finally
@@ -273,7 +268,6 @@ function push{T<:AbstractString, P<:AbstractCredentials}(repo::GitRepo;
         GitRemoteAnon(repo, remoteurl)
     end
     try
-        payload = make_payload(payload)
         push_opts=PushOptions(callbacks=RemoteCallbacks(credentials_cb(), payload))
         push(rmt, refspecs, force=force, options=push_opts)
     finally
@@ -447,7 +441,6 @@ function clone{P<:AbstractCredentials}(repo_url::AbstractString, repo_path::Abst
                payload::Nullable{P}=Nullable{AbstractCredentials}())
     # setup clone options
     lbranch = Base.cconvert(Cstring, branch)
-    payload = make_payload(payload)
     fetch_opts=FetchOptions(callbacks = RemoteCallbacks(credentials_cb(), payload))
     clone_opts = CloneOptions(
                 bare = Cint(isbare),
