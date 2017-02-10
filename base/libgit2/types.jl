@@ -162,6 +162,14 @@ Matches the [`git_checkout_options`](https://libgit2.github.com/libgit2/#HEAD/ty
     perfdata_payload::Ptr{Void}
 end
 
+type RemotePayload
+    credentials::Nullable{AbstractCredentials}
+end
+
+function RemotePayload{P<:AbstractCredentials}(credentials::Nullable{P})
+    RemotePayload(Nullable{AbstractCredentials}(payload))
+end
+
 """
     LibGit2.RemoteCallbacks
 
@@ -184,12 +192,12 @@ Matches the [`git_remote_callbacks`](https://libgit2.github.com/libgit2/#HEAD/ty
     payload::Ptr{Void}
 end
 
-function RemoteCallbacks(credentials::Ptr{Void}, payload::Ref{Nullable{AbstractCredentials}})
+function RemoteCallbacks(credentials::Ptr{Void}, payload::Ref{RemotePayload})
     RemoteCallbacks(credentials=credentials, payload=pointer_from_objref(payload))
 end
 
-function RemoteCallbacks{P<:AbstractCredentials}(credentials::Ptr{Void}, payload::Nullable{P})
-    RemoteCallbacks(credentials, Ref{Nullable{AbstractCredentials}}(payload))
+function RemoteCallbacks(credentials::Ptr{Void}, payload::RemotePayload)
+    RemoteCallbacks(credentials, Ref{RemotePayload}(payload))
 end
 
 """
@@ -714,13 +722,11 @@ reset!(p::CachedCredentials) = (foreach(reset!, values(p.cred)); p)
 "Obtain the cached credentials for the given host+protocol (credid), or return and store the default if not found"
 get_creds!(collection::CachedCredentials, credid, default) = get!(collection.cred, credid, default)
 get_creds!(creds::AbstractCredentials, credid, default) = creds
-get_creds!(creds::Void, credid, default) = default
-function get_creds!(creds::Ref{Nullable{AbstractCredentials}}, credid, default)
-    if isnull(creds[])
-        creds[] = Nullable{AbstractCredentials}(default)
+function get_creds!(creds::Nullable{AbstractCredentials}, credid, default)
+    if isnull(creds)
         return default
     else
-        get_creds!(Base.get(creds[]), credid, default)
+        get_creds!(Base.get(creds), credid, default)
     end
 end
 

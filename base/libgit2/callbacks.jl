@@ -245,8 +245,9 @@ function credentials_callback(libgit2credptr::Ptr{Ptr{Void}}, url_ptr::Cstring,
 
     # get credentials object from payload pointer
     @assert payload_ptr != C_NULL
-    creds = unsafe_pointer_to_objref(payload_ptr)
-    explicit = !isnull(creds[]) && !isa(Base.get(creds[]), CachedCredentials)
+    payload = unsafe_pointer_to_objref(payload_ptr)[]
+    creds = payload.credentials
+    explicit = !isnull(creds) && !isa(Base.get(creds), CachedCredentials)
     # use ssh key or ssh-agent
     if isset(allowed_types, Cuint(Consts.CREDTYPE_SSH_KEY))
         sshcreds = get_creds!(creds, "ssh://$host", reset!(SSHCredentials(true), -1))
@@ -265,7 +266,7 @@ function credentials_callback(libgit2credptr::Ptr{Ptr{Void}}, url_ptr::Cstring,
         # credentials
         if !isa(upcreds, UserPasswordCredentials)
             upcreds = defaultcreds
-            isa(Base.get(creds[]), CachedCredentials) && (Base.get(creds[]).creds[credid] = upcreds)
+            isa(Base.get(creds), CachedCredentials) && (Base.get(creds).creds[credid] = upcreds)
         end
         return authenticate_userpass(upcreds, libgit2credptr, protocol, host, urlusername)
     end
