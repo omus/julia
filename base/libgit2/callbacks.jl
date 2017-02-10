@@ -140,8 +140,11 @@ function authenticate_ssh(creds::SSHCredentials, libgit2credptr::Ptr{Ptr{Void}},
 end
 
 function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::Ptr{Ptr{Void}},
-        c::Credential, state::Dict{Symbol,Char}, repo::Nullable{GitRepo})
+        payload::RemotePayload)
 
+    c = payload.cred
+    state = payload.state
+    repo = payload.repo
     println("userpass: $c")
 
     if !filled(c) && get!(state, :cache, 'Y') == 'Y'
@@ -180,7 +183,10 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
             c.password = prompt("Password for '$(c.protocol)://$(c.username)@$(c.host)'", password=true)
         end
 
-        # state[:prompt] = 'U'
+        payload.prompts_remaining -= 1
+        if payload.prompts_remaining <= 0
+            state[:prompt] = 'N'
+        end
     end
 
     !filled(c) && return Cint(Error.EAUTH)
@@ -268,7 +274,7 @@ function credentials_callback(libgit2credptr::Ptr{Ptr{Void}}, url_ptr::Cstring,
             upcreds = defaultcreds
             isa(Base.get(creds), CachedCredentials) && (Base.get(creds).creds[credid] = upcreds)
         end
-        return authenticate_userpass(upcreds, libgit2credptr, cred, state, repo)
+        return authenticate_userpass(upcreds, libgit2credptr, payload)
     end
 
     # No authentication method we support succeeded. The most likely cause is

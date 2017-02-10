@@ -734,15 +734,16 @@ type Credential
     password::String
 end
 
-immutable RemotePayload
+type RemotePayload
     credentials::Nullable{AbstractCredentials}
     repo::Nullable{GitRepo}
     cred::Credential
     state::Dict{Symbol,Char}
+    prompts_remaining::Int
 end
 
 function RemotePayload(credentials::Nullable{AbstractCredentials}, repo::Nullable{GitRepo})
-    RemotePayload(credentials, repo, Credential(), Dict{Symbol,Char}())
+    RemotePayload(credentials, repo, Credential(), Dict{Symbol,Char}(), 3)
 end
 
 function RemotePayload{P<:AbstractCredentials}(credentials::Nullable{P}, repo::GitRepo)
