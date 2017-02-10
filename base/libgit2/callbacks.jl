@@ -140,7 +140,7 @@ function authenticate_ssh(creds::SSHCredentials, libgit2credptr::Ptr{Ptr{Void}},
 end
 
 function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::Ptr{Ptr{Void}},
-        c::Credential, state::Dict{Symbol,Char})
+        c::Credential, state::Dict{Symbol,Char}, repo::Nullable{GitRepo})
 
     println("userpass: $c")
 
@@ -151,8 +151,12 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
         state[:cache] == 'U'
     end
 
-    if !filled(c) && get!(state, :credential_helper, 'Y') == 'Y'
-        config = LibGit2.GitConfig()  # TODO: Not right
+    if !filled(c) &&  get!(state, :credential_helper, 'Y') == 'Y'
+        config = if isnull(repo)
+            LibGit2.GitConfig()
+        else
+            LibGit2.GitConfig(get(repo))
+        end
 
         helpers = helpers!(config, c)
         fill!(helpers, c)
@@ -233,6 +237,7 @@ function credentials_callback(libgit2credptr::Ptr{Ptr{Void}}, url_ptr::Cstring,
     creds = payload.credentials
     state = payload.state
     cred = payload.cred
+    repo = payload.repo
 
     # Update the credential state with the URL information. Make sure to wipe out the
     # password so we do not infinite loop.
@@ -263,7 +268,7 @@ function credentials_callback(libgit2credptr::Ptr{Ptr{Void}}, url_ptr::Cstring,
             upcreds = defaultcreds
             isa(Base.get(creds), CachedCredentials) && (Base.get(creds).creds[credid] = upcreds)
         end
-        return authenticate_userpass(upcreds, libgit2credptr, cred, state)
+        return authenticate_userpass(upcreds, libgit2credptr, cred, state, repo)
     end
 
     # No authentication method we support succeeded. The most likely cause is

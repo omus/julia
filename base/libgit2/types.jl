@@ -176,34 +176,26 @@ end
 
 immutable RemotePayload
     credentials::Nullable{AbstractCredentials}
-    # repo::Nullable{GitRepo}
+    repo::Nullable{GitRepo}
     state::Dict{Symbol,Char}
     cred::Credential
 end
 
-#=
 function RemotePayload(credentials::Nullable{AbstractCredentials}, repo::Nullable{GitRepo})
     RemotePayload(credentials, repo, Dict{Symbol,Char}(), Credential())
 end
 
-function RemotePayload{P<:AbstractCredentials}(credentials::P, repo::GitRepo)
+function RemotePayload{P<:AbstractCredentials}(credentials::Nullable{P}, repo::GitRepo)
     RemotePayload(
         Nullable{AbstractCredentials}(credentials),
         Nullable{GitRepo}(repo),
     )
 end
 
-function RemotePayload{P<:AbstractCredentials}(credentials::P)
+function RemotePayload{P<:AbstractCredentials}(credentials::Nullable{P})
     RemotePayload(
         Nullable{AbstractCredentials}(credentials),
         Nullable{GitRepo}(),
-    )
-end
-=#
-
-function RemotePayload{P<:AbstractCredentials}(credentials::Nullable{P})
-    RemotePayload(
-        Nullable{AbstractCredentials}(credentials), Dict{Symbol,Char}(), Credential(),
     )
 end
 
