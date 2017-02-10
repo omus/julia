@@ -179,10 +179,10 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
         # state[:prompt] = 'U'
 
     else
-        return Cint(Error.EAUTH)
+        return Cint(Error.EUSER)
     end
 
-    # !filled(c) && return Cint(Error.EAUTH)
+    !filled(c) && return Cint(Error.EAUTH)
 
     err = ccall((:git_cred_userpass_plaintext_new, :libgit2), Cint,
                  (Ptr{Ptr{Void}}, Cstring, Cstring),
