@@ -162,12 +162,49 @@ Matches the [`git_checkout_options`](https://libgit2.github.com/libgit2/#HEAD/ty
     perfdata_payload::Ptr{Void}
 end
 
-type RemotePayload
-    credentials::Nullable{AbstractCredentials}
+immutable CredentialHelper
+    cmd::Cmd
 end
 
+type Credential
+    protocol::String
+    host::String
+    path::String
+    username::String
+    password::String
+end
+
+immutable RemotePayload
+    credentials::Nullable{AbstractCredentials}
+    # repo::Nullable{GitRepo}
+    state::Dict{Symbol,Char}
+    cred::Credential
+end
+
+#=
+function RemotePayload(credentials::Nullable{AbstractCredentials}, repo::Nullable{GitRepo})
+    RemotePayload(credentials, repo, Dict{Symbol,Char}(), Credential())
+end
+
+function RemotePayload{P<:AbstractCredentials}(credentials::P, repo::GitRepo)
+    RemotePayload(
+        Nullable{AbstractCredentials}(credentials),
+        Nullable{GitRepo}(repo),
+    )
+end
+
+function RemotePayload{P<:AbstractCredentials}(credentials::P)
+    RemotePayload(
+        Nullable{AbstractCredentials}(credentials),
+        Nullable{GitRepo}(),
+    )
+end
+=#
+
 function RemotePayload{P<:AbstractCredentials}(credentials::Nullable{P})
-    RemotePayload(Nullable{AbstractCredentials}(payload))
+    RemotePayload(
+        Nullable{AbstractCredentials}(credentials), Dict{Symbol,Char}(), Credential(),
+    )
 end
 
 """

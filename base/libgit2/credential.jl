@@ -1,15 +1,3 @@
-type CredentialHelper
-    cmd::Cmd
-end
-
-type Credential
-    protocol::String
-    host::String
-    path::String
-    username::String
-    password::String
-end
-
 function Base.parse(::Type{CredentialHelper}, helper::AbstractString)
     if startswith(helper, "!")
         cmd_str = helper[2:end]
@@ -76,6 +64,7 @@ function merge!(a::Credential, b::Credential)
     !isempty(b.path) && (a.path = b.path)
     !isempty(b.username) && (a.username = b.username)
     !isempty(b.password) && (a.password = b.password)
+    return a
 end
 
 function Base.:(==)(a::Credential, b::Credential)

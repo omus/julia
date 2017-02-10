@@ -236,6 +236,7 @@ function fetch{T<:AbstractString, P<:AbstractCredentials}(repo::GitRepo;
         payload = RemotePayload(credentials)
         fo = FetchOptions(callbacks=RemoteCallbacks(credentials_cb(), payload))
         fetch(rmt, refspecs, msg="from $(url(rmt))", options = fo)
+        println("fetch success")
     finally
         close(rmt)
     end
@@ -272,6 +273,7 @@ function push{T<:AbstractString, P<:AbstractCredentials}(repo::GitRepo;
         payload = RemotePayload(credentials)
         push_opts=PushOptions(callbacks=RemoteCallbacks(credentials_cb(), payload))
         push(rmt, refspecs, force=force, options=push_opts)
+        println("push success")
     finally
         close(rmt)
     end
@@ -451,7 +453,10 @@ function clone{P<:AbstractCredentials}(repo_url::AbstractString, repo_path::Abst
                 fetch_opts=fetch_opts,
                 remote_cb = remote_cb
             )
-    return clone(repo_url, repo_path, clone_opts)
+    # return clone(repo_url, repo_path, clone_opts)
+    result = clone(repo_url, repo_path, clone_opts)
+    println("clone success: ", payload.cred)
+    return result
 end
 
 """ git reset [<committish>] [--] <pathspecs>... """

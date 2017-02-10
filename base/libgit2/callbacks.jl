@@ -140,67 +140,53 @@ function authenticate_ssh(creds::SSHCredentials, libgit2credptr::Ptr{Ptr{Void}},
 end
 
 function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::Ptr{Ptr{Void}},
-        protocol, host, urlusername)
-    isusedcreds = checkused!(creds)
+        c::Credential, state::Dict{Symbol,Char})
 
-    errcls, errmsg = Error.last_error()
-    if errcls != Error.None
-        # Check if we used ssh-agent
-        if creds.use_credential_helper == 'U'
-            creds.use_credential_helper = 'E' # disables git-credentials use in the future
-        end
-    end
+    println("userpass: $c")
 
-    username = creds.user !== nothing ? creds.user : ""
-    userpass = creds.pass !== nothing ? creds.pass : ""
-    assigned = false
+    # TODO: Implement fall through when cache is invalid and/or credential_helper is invalid
 
-    # first try git-credentials if credentials support its usage
-    if creds.use_credential_helper in ('Y', 'U')
+    if get!(state, :cache, 'Y') == 'Y'
+        c.username = creds.user !== nothing ? creds.user : ""
+        c.password = creds.pass !== nothing ? creds.pass : ""
+
+        state[:cache] == 'U'
+
+    elseif get!(state, :credential_helper, 'Y') == 'Y'
         config = LibGit2.GitConfig()  # TODO: Not right
 
-        cred = Credential(protocol, host, "", urlusername, "")
-        @show cred
-        helpers = helpers!(config, cred)
-        fill!(helpers, cred)
+        helpers = helpers!(config, c)
+        fill!(helpers, c)
 
-        @show cred
+        @show c
 
-        if filled(cred)
-            username = cred.username
-            userpass = cred.password
-            assigned = true
-        end
+        state[:credential_helper] = 'U'  # used git-credentials only one time
 
-        creds.use_credential_helper = 'U'  # used git-credentials only one time
-    end
-
-    if !assigned && creds.prompt_if_incorrect
+    elseif creds.prompt_if_incorrect && get!(state, :prompt, 'Y') == 'Y'
         if is_windows()
-            if isempty(username) || isempty(userpass) || isusedcreds
-                res = Base.winprompt("Please enter your credentials for '$protocol://$host'", "Credentials required",
-                        username === nothing || isempty(username) ?
-                        urlusername : username; prompt_username = true)
-                isnull(res) && return Cint(Error.EAUTH)
-                username, userpass = Base.get(res)
-            end
-        elseif isusedcreds
-            username = prompt("Username for '$protocol://$host'", default = isempty(username) ?
-                urlusername : username)
-            userpass = prompt("Password for '$protocol://$username@$host'", password=true)
+            res = Base.winprompt(
+                "Please enter your credentials for '$(c.protocol)://$(c.host)'",
+                "Credentials required",
+                c.username;
+                prompt_username = true)
+            isnull(res) && return Cint(Error.EAUTH)
+            c.username, c.password = Base.get(res)
+        else
+            c.username = prompt("Username for '$(c.protocol)://$(c.host)'", default=c.username)
+            c.password = prompt("Password for '$(c.protocol)://$(c.username)@$(c.host)'", password=true)
         end
-        ((creds.user != username) || (creds.pass != userpass)) && reset!(creds)
-        creds.user = username # save credentials
-        creds.pass = userpass # save credentials
 
-        isempty(username) && isempty(userpass) && return Cint(Error.EAUTH)
-    elseif !assigned
-        isusedcreds && return Cint(Error.EAUTH)
+        # state[:prompt] = 'U'
+
+    else
+        return Cint(Error.EAUTH)
     end
+
+    # !filled(c) && return Cint(Error.EAUTH)
 
     err = ccall((:git_cred_userpass_plaintext_new, :libgit2), Cint,
                  (Ptr{Ptr{Void}}, Cstring, Cstring),
-                 libgit2credptr, username, userpass)
+                 libgit2credptr, c.username, c.password)
     err == 0 && return Cint(0)
 end
 
@@ -234,6 +220,7 @@ counting strategy that prevents repeated usage of faulty credentials.
 function credentials_callback(libgit2credptr::Ptr{Ptr{Void}}, url_ptr::Cstring,
                               username_ptr::Cstring,
                               allowed_types::Cuint, payload_ptr::Ptr{Void})
+    println("credentials_callback")
     err = 0
     url = unsafe_string(url_ptr)
 
@@ -247,6 +234,13 @@ function credentials_callback(libgit2credptr::Ptr{Ptr{Void}}, url_ptr::Cstring,
     @assert payload_ptr != C_NULL
     payload = unsafe_pointer_to_objref(payload_ptr)[]
     creds = payload.credentials
+    state = payload.state
+    cred = payload.cred
+
+    if cred == Credential()
+        cred = merge!(cred, Credential(protocol, host, "", urlusername, ""))
+    end
+
     explicit = !isnull(creds) && !isa(Base.get(creds), CachedCredentials)
     # use ssh key or ssh-agent
     if isset(allowed_types, Cuint(Consts.CREDTYPE_SSH_KEY))
@@ -268,7 +262,7 @@ function credentials_callback(libgit2credptr::Ptr{Ptr{Void}}, url_ptr::Cstring,
             upcreds = defaultcreds
             isa(Base.get(creds), CachedCredentials) && (Base.get(creds).creds[credid] = upcreds)
         end
-        return authenticate_userpass(upcreds, libgit2credptr, protocol, host, urlusername)
+        return authenticate_userpass(upcreds, libgit2credptr, cred, state)
     end
 
     # No authentication method we support succeeded. The most likely cause is
