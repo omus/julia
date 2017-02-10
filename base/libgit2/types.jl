@@ -162,43 +162,6 @@ Matches the [`git_checkout_options`](https://libgit2.github.com/libgit2/#HEAD/ty
     perfdata_payload::Ptr{Void}
 end
 
-immutable CredentialHelper
-    cmd::Cmd
-end
-
-type Credential
-    protocol::String
-    host::String
-    path::String
-    username::String
-    password::String
-end
-
-immutable RemotePayload
-    credentials::Nullable{AbstractCredentials}
-    repo::Nullable{GitRepo}
-    state::Dict{Symbol,Char}
-    cred::Credential
-end
-
-function RemotePayload(credentials::Nullable{AbstractCredentials}, repo::Nullable{GitRepo})
-    RemotePayload(credentials, repo, Dict{Symbol,Char}(), Credential())
-end
-
-function RemotePayload{P<:AbstractCredentials}(credentials::Nullable{P}, repo::GitRepo)
-    RemotePayload(
-        Nullable{AbstractCredentials}(credentials),
-        Nullable{GitRepo}(repo),
-    )
-end
-
-function RemotePayload{P<:AbstractCredentials}(credentials::Nullable{P})
-    RemotePayload(
-        Nullable{AbstractCredentials}(credentials),
-        Nullable{GitRepo}(),
-    )
-end
-
 """
     LibGit2.RemoteCallbacks
 
@@ -219,14 +182,6 @@ Matches the [`git_remote_callbacks`](https://libgit2.github.com/libgit2/#HEAD/ty
     push_negotiation::Ptr{Void}
     transport::Ptr{Void}
     payload::Ptr{Void}
-end
-
-function RemoteCallbacks(credentials::Ptr{Void}, payload::Ref{RemotePayload})
-    RemoteCallbacks(credentials=credentials, payload=pointer_from_objref(payload))
-end
-
-function RemoteCallbacks(credentials::Ptr{Void}, payload::RemotePayload)
-    RemoteCallbacks(credentials, Ref{RemotePayload}(payload))
 end
 
 """
@@ -762,4 +717,52 @@ end
 function securezero!(p::CachedCredentials)
     foreach(securezero!, values(p.cred))
     return p
+end
+
+
+### New
+
+immutable CredentialHelper
+    cmd::Cmd
+end
+
+type Credential
+    protocol::String
+    host::String
+    path::String
+    username::String
+    password::String
+end
+
+immutable RemotePayload
+    credentials::Nullable{AbstractCredentials}
+    repo::Nullable{GitRepo}
+    cred::Credential
+    state::Dict{Symbol,Char}
+end
+
+function RemotePayload(credentials::Nullable{AbstractCredentials}, repo::Nullable{GitRepo})
+    RemotePayload(credentials, repo, Credential(), Dict{Symbol,Char}())
+end
+
+function RemotePayload{P<:AbstractCredentials}(credentials::Nullable{P}, repo::GitRepo)
+    RemotePayload(
+        Nullable{AbstractCredentials}(credentials),
+        Nullable{GitRepo}(repo),
+    )
+end
+
+function RemotePayload{P<:AbstractCredentials}(credentials::Nullable{P})
+    RemotePayload(
+        Nullable{AbstractCredentials}(credentials),
+        Nullable{GitRepo}(),
+    )
+end
+
+function RemoteCallbacks(credentials::Ptr{Void}, payload::Ref{RemotePayload})
+    RemoteCallbacks(credentials=credentials, payload=pointer_from_objref(payload))
+end
+
+function RemoteCallbacks(credentials::Ptr{Void}, payload::RemotePayload)
+    RemoteCallbacks(credentials, Ref{RemotePayload}(payload))
 end
