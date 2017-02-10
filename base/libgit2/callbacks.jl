@@ -144,15 +144,14 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
 
     println("userpass: $c")
 
-    # TODO: Implement fall through when cache is invalid and/or credential_helper is invalid
-
-    if get!(state, :cache, 'Y') == 'Y'
+    if !filled(c) && get!(state, :cache, 'Y') == 'Y'
         c.username = creds.user !== nothing ? creds.user : ""
         c.password = creds.pass !== nothing ? creds.pass : ""
 
         state[:cache] == 'U'
+    end
 
-    elseif get!(state, :credential_helper, 'Y') == 'Y'
+    if !filled(c) && get!(state, :credential_helper, 'Y') == 'Y'
         config = LibGit2.GitConfig()  # TODO: Not right
 
         helpers = helpers!(config, c)
@@ -161,8 +160,9 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
         @show c
 
         state[:credential_helper] = 'U'  # used git-credentials only one time
+    end
 
-    elseif creds.prompt_if_incorrect && get!(state, :prompt, 'Y') == 'Y'
+    if !filled(c) && creds.prompt_if_incorrect && get!(state, :prompt, 'Y') == 'Y'
         if is_windows()
             res = Base.winprompt(
                 "Please enter your credentials for '$(c.protocol)://$(c.host)'",
@@ -177,9 +177,6 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
         end
 
         # state[:prompt] = 'U'
-
-    else
-        return Cint(Error.EUSER)
     end
 
     !filled(c) && return Cint(Error.EAUTH)
