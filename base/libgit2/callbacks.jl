@@ -176,20 +176,28 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
                 "Credentials required",
                 c.username;
                 prompt_username = true)
-            isnull(res) && return Cint(Error.EAUTH)
-            c.username, c.password = Base.get(res)
+
+            if !isnull(res)
+                c.username, c.password = Base.get(res)
+            end
         else
-            c.username = prompt("Username for '$(c.protocol)://$(c.host)'", default=c.username)
+            c.username = prompt("Username for '$(c.protocol)://$(c.host)'", default=c.username)  # TODO: Default not showing?
             c.password = prompt("Password for '$(c.protocol)://$(c.username)@$(c.host)'", password=true)
         end
 
         payload.prompts_remaining -= 1
         if payload.prompts_remaining <= 0
             state[:prompt] = 'N'
+            ccall((:giterr_set_str, :libgit2), Void, (Cint, Cstring), Cint(Error.Callback), "Aborting, maximum number of user prompts reached.")
+            return Cint(Error.EAUTH)
         end
     end
 
-    !filled(c) && return Cint(Error.EAUTH)
+    if !filled(c)
+        # TODO: Maybe just throw a Julia error
+        ccall((:giterr_set_str, :libgit2), Void, (Cint, Cstring), Cint(Error.Callback), "Aborting, credentials are blank.")
+        return Cint(Error.EAUTH)
+    end
 
     err = ccall((:git_cred_userpass_plaintext_new, :libgit2), Cint,
                  (Ptr{Ptr{Void}}, Cstring, Cstring),
