@@ -144,8 +144,8 @@ function authenticate_userpass(creds::UserPasswordCredentials, libgit2credptr::P
     isusedcreds = checkused!(creds)
 
     if creds.prompt_if_incorrect
-        username = creds.user
-        userpass = creds.pass
+        username = Base.get(ENV, "AUTH_USER", creds.user)
+        userpass = Base.get(ENV, "AUTH_PASS", creds.pass)
         (username === nothing) && (username = "")
         (userpass === nothing) && (userpass = "")
         if is_windows()
