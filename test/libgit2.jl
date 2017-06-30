@@ -368,14 +368,10 @@ mktempdir() do dir
                 LibGit2.GitRepo(path)
                 error("unexpected")
             catch e
-                if Base.LibGit2.version() < v"0.26.0"
-                    msg = "Failed to resolve path"
-                else
-                    msg = "failed to resolve path"
-                end
-
                 @test typeof(e) == LibGit2.GitError
-                @test startswith(sprint(show, e), "GitError(Code:ENOTFOUND, Class:OS, $msg")
+                @test startswith(
+                    lowercase(sprint(show, e)),
+                    lowercase("GitError(Code:ENOTFOUND, Class:OS, failed to resolve path"))
             end
             path = joinpath(dir, "Example.BareTwo")
             repo = LibGit2.init(path, true)
@@ -1921,7 +1917,7 @@ mktempdir() do dir
                             deserialize(f)
                         end
                         @test err.code == LibGit2.Error.ERROR
-                        @test err.msg == "invalid Content-Type: text/plain"
+                        @test lowercase(err.msg) == lowercase("invalid Content-Type: text/plain")
                     end
 
                     # OpenSSL s_server should still be running
