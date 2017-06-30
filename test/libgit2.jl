@@ -1868,15 +1868,19 @@ mktempdir() do dir
                 run(pipeline(`openssl req -new -x509 -newkey rsa:2048 -nodes -keyout $key -out $cert -days 1 -subj "/CN=$common_name"`, stderr=DevNull))
                 run(`openssl x509 -in $cert -out $pem -outform PEM`)
 
+                # Find an available port by listening
+                port, server = listenany(49152)
+                close(server)
+
                 # Make a fake Julia package and minimal HTTPS server with our generated
                 # certificate. The minimal server can't actually serve a Git repository.
                 mkdir(joinpath(root, "Example.jl"))
                 pobj = cd(root) do
-                    spawn(`openssl s_server -key $key -cert $cert -WWW`)
+                    spawn(`openssl s_server -key $key -cert $cert -WWW -accept $port`)
                 end
 
                 errfile = joinpath(root, "error")
-                repo_url = "https://$common_name:4433/Example.jl"
+                repo_url = "https://$common_name:$port/Example.jl"
                 repo_dir = joinpath(root, "dest")
                 code = """
                     dest_dir = "$repo_dir"
@@ -1913,6 +1917,9 @@ mktempdir() do dir
                         @test err.code == LibGit2.Error.ERROR
                         @test err.msg == "invalid Content-Type: text/plain"
                     end
+
+                    # OpenSSL s_server should still be running
+                    @test process_running(pobj)
                 finally
                     kill(pobj)
                 end

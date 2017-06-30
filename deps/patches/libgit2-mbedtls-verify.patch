@@ -1,14 +1,17 @@
-commit 1732ba4c3f6e62017c94e4c60dade9802da1a317
+commit 795a6271f1feae601a499848347dfd57230e5b59
 Author: Curtis Vogt <curtis.vogt@gmail.com>
-Date:   Fri Jun 23 18:53:10 2017 -0500
+Date:   Thu Jun 29 16:30:53 2017 -0500
 
     Use mbedtls certificate verification
+    
+    Letting mbedtls handle all certficate verification and removed the
+    custom alternative names and common name checking.
 
 diff --git a/src/streams/mbedtls.c b/src/streams/mbedtls.c
-index 0376ee4..e52afc8 100644
+index 0376ee4..8b867de 100644
 --- a/src/streams/mbedtls.c
 +++ b/src/streams/mbedtls.c
-@@ -228,82 +228,34 @@ static int ssl_teardown(mbedtls_ssl_context *ssl)
+@@ -228,82 +228,18 @@ static int ssl_teardown(mbedtls_ssl_context *ssl)
  	return ret;
  }
  
@@ -28,30 +31,26 @@ index 0376ee4..e52afc8 100644
 -	const mbedtls_x509_crt *cert;
 -	const mbedtls_x509_sequence *alts;
 -	int ret, matched = -1;
-+	mbedtls_x509_crt *cert;
-+	uint32_t flags;
-+	int ret = -1;
- 	size_t sn_size = 512;
+-	size_t sn_size = 512;
 -	char subject_name[sn_size], alt_name[sn_size];
 -
-+	char buf[sn_size];
-
++	int ret = -1;
+ 
  	if ((ret = mbedtls_ssl_get_verify_result(ssl)) != 0) {
--		char vrfy_buf[512];
+ 		char vrfy_buf[512];
 -		mbedtls_x509_crt_verify_info( vrfy_buf, sizeof( vrfy_buf ), "  ! ", ret );
 -		giterr_set(GITERR_SSL, "The SSL certificate is invalid: %s", vrfy_buf);
-+		mbedtls_x509_crt_verify_info(buf, sn_size, "  ! ", ret);
-+		giterr_set(GITERR_SSL, "The SSL certificate is invalid: %s", buf);
++		mbedtls_x509_crt_verify_info(vrfy_buf, sizeof(vrfy_buf), "", ret);
++		giterr_set(GITERR_SSL, "The SSL certificate is invalid: %x - %s", ret, vrfy_buf);
  		return GIT_ECERTIFICATE;
  	}
  
 -	cert = mbedtls_ssl_get_peer_cert(ssl);
-+	cert = (mbedtls_x509_crt*) mbedtls_ssl_get_peer_cert(ssl);
- 	if (!cert) {
- 		giterr_set(GITERR_SSL, "the server did not provide a certificate");
- 		return -1;
- 	}
- 
+-	if (!cert) {
+-		giterr_set(GITERR_SSL, "the server did not provide a certificate");
+-		return -1;
+-	}
+-
 -	/* Check the alternative names */
 -	alts = &cert->subject_alt_names;
 -	while (alts != NULL && matched != 1) {
@@ -70,12 +69,7 @@ index 0376ee4..e52afc8 100644
 -		}
 -
 -		alts = alts->next;
-+	if (mbedtls_x509_crt_verify(cert, git__ssl_conf->ca_chain, NULL, host, &flags, NULL, NULL) != 0) {
-+		mbedtls_x509_crt_verify_info(buf, sn_size, "", flags);
-+		buf[strlen(buf) - 1] = '\0';  // Remove trailing newline
-+		giterr_set(GITERR_SSL, buf);
-+		return GIT_ECERTIFICATE;
- 	}
+-	}
 -	if (matched == 0)
 -		goto cert_fail_name;
 -
@@ -91,7 +85,7 @@ index 0376ee4..e52afc8 100644
 -
 -	if (check_host_name(subject_name, host) < 0)
 -		goto cert_fail_name;
- 
+-
  	return 0;
 -
 -on_error:
