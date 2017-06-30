@@ -1,4 +1,4 @@
-commit 795a6271f1feae601a499848347dfd57230e5b59
+commit eefe88eaf8c5c5b7c9a596da79e68dca3a3234d4
 Author: Curtis Vogt <curtis.vogt@gmail.com>
 Date:   Thu Jun 29 16:30:53 2017 -0500
 
@@ -8,10 +8,10 @@ Date:   Thu Jun 29 16:30:53 2017 -0500
     custom alternative names and common name checking.
 
 diff --git a/src/streams/mbedtls.c b/src/streams/mbedtls.c
-index 0376ee4..8b867de 100644
+index 0376ee4..e456ea8 100644
 --- a/src/streams/mbedtls.c
 +++ b/src/streams/mbedtls.c
-@@ -228,82 +228,18 @@ static int ssl_teardown(mbedtls_ssl_context *ssl)
+@@ -228,82 +228,19 @@ static int ssl_teardown(mbedtls_ssl_context *ssl)
  	return ret;
  }
  
@@ -35,6 +35,7 @@ index 0376ee4..8b867de 100644
 -	char subject_name[sn_size], alt_name[sn_size];
 -
 +	int ret = -1;
++	(void)(host);  // Suppress unused parameter warning
  
  	if ((ret = mbedtls_ssl_get_verify_result(ssl)) != 0) {
  		char vrfy_buf[512];
