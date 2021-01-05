@@ -546,19 +546,6 @@ static int jl_unw_step(bt_cursor_t *cursor, int from_signal_handler, uintptr_t *
     return unw_step(cursor) > 0;
 }
 
-#ifdef LIBOSXUNWIND
-NOINLINE size_t rec_backtrace_ctx_dwarf(jl_bt_element_t *bt_data, size_t maxsize,
-                                        bt_context_t *context, jl_gcframe_t *pgcstack)
-{
-    size_t bt_size = 0;
-    bt_cursor_t cursor;
-    if (unw_init_local_dwarf(&cursor, context) != UNW_ESUCCESS)
-        return 0;
-    jl_unw_stepn(&cursor, bt_data, &bt_size, NULL, maxsize, 0, &pgcstack, 1);
-    return bt_size;
-}
-#endif
-
 #else
 // stacktraces are disabled
 static int jl_unw_init(bt_cursor_t *cursor, bt_context_t *context)

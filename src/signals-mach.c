@@ -127,17 +127,6 @@ static void allocate_segv_handler()
     }
 }
 
-#ifdef LIBOSXUNWIND
-volatile mach_port_t mach_profiler_thread = 0;
-static kern_return_t profiler_segv_handler
-                (mach_port_t                          exception_port,
-                 mach_port_t                                  thread,
-                 mach_port_t                                    task,
-                 exception_type_t                          exception,
-                 exception_data_t                               code,
-                 mach_msg_type_number_t                   code_count);
-#endif
-
 #if defined(_CPU_X86_64_)
 typedef x86_thread_state64_t host_thread_state_t;
 typedef x86_exception_state64_t host_exception_state_t;
@@ -212,11 +201,6 @@ kern_return_t catch_exception_raise(mach_port_t            exception_port,
     unsigned int exc_count = HOST_EXCEPTION_STATE_COUNT;
     host_exception_state_t exc_state;
     host_thread_state_t state;
-#ifdef LIBOSXUNWIND
-    if (thread == mach_profiler_thread) {
-        return profiler_segv_handler(exception_port, thread, task, exception, code, code_count);
-    }
-#endif
     int16_t tid;
     jl_ptls_t ptls2 = NULL;
     for (tid = 0;tid < jl_n_threads;tid++) {
@@ -413,73 +397,12 @@ static pthread_t profiler_thread;
 clock_serv_t clk;
 static mach_port_t profile_port = 0;
 
-#ifdef LIBOSXUNWIND
-volatile static int forceDwarf = -2;
-static unw_context_t profiler_uc;
-
-static kern_return_t profiler_segv_handler
-                (mach_port_t                          exception_port,
-                 mach_port_t                                  thread,
-                 mach_port_t                                    task,
-                 exception_type_t                          exception,
-                 exception_data_t                               code,
-                 mach_msg_type_number_t                   code_count)
-{
-    assert(thread == mach_profiler_thread);
-    host_thread_state_t state;
-
-    // Not currently unwinding. Raise regular segfault
-    if (forceDwarf == -2)
-        return KERN_INVALID_ARGUMENT;
-
-    if (forceDwarf == 0)
-        forceDwarf = 1;
-    else
-        forceDwarf = -1;
-
-    unsigned int count = THREAD_STATE_COUNT;
-
-    thread_get_state(thread, THREAD_STATE, (thread_state_t)&state, &count);
-
-#ifdef _CPU_X86_64_
-    // don't change cs fs gs rflags
-    uint64_t cs = state.__cs;
-    uint64_t fs = state.__fs;
-    uint64_t gs = state.__gs;
-    uint64_t rflags = state.__rflags;
-#elif defined(_CPU_AARCH64_)
-    uint64_t cpsr = state.__cpsr;
-#else
-#error Unknown CPU
-#endif
-
-    memcpy(&state, &profiler_uc, sizeof(state));
-
-#ifdef _CPU_X86_64_
-    state.__cs = cs;
-    state.__fs = fs;
-    state.__gs = gs;
-    state.__rflags = rflags;
-#else
-    state.__cpsr = cpsr;
-#endif
-
-    kern_return_t ret = thread_set_state(thread, THREAD_STATE, (thread_state_t)&state, count);
-    HANDLE_MACH_ERROR("thread_set_state", ret);
-
-    return KERN_SUCCESS;
-}
-#endif
-
 void *mach_profile_listener(void *arg)
 {
     (void)arg;
     int i;
     const int max_size = 512;
     attach_exception_port(mach_thread_self(), 1);
-#ifdef LIBOSXUNWIND
-    mach_profiler_thread = mach_thread_self();
-#endif
     mig_reply_error_t *bufRequest = (mig_reply_error_t*)malloc_s(max_size);
     while (1) {
         kern_return_t ret = mach_msg(&bufRequest->Head, MACH_RCV_MSG,
@@ -501,39 +424,7 @@ void *mach_profile_listener(void *arg)
             unw_context_t *uc;
             jl_thread_suspend_and_get_state(i, &uc);
             if (running) {
-#ifdef LIBOSXUNWIND
-                /*
-                 *  Unfortunately compact unwind info is incorrectly generated for quite a number of
-                 *  libraries by quite a large number of compilers. We can fall back to DWARF unwind info
-                 *  in some cases, but in quite a number of cases (especially libraries not compiled in debug
-                 *  mode, only the compact unwind info may be available). Even more unfortunately, there is no
-                 *  way to detect such bogus compact unwind info (other than noticing the resulting segfault).
-                 *  What we do here is ugly, but necessary until the compact unwind info situation improves.
-                 *  We try to use the compact unwind info and if that results in a segfault, we retry with DWARF info.
-                 *  Note that in a small number of cases this may result in bogus stack traces, but at least the topmost
-                 *  entry will always be correct, and the number of cases in which this is an issue is rather small.
-                 *  Other than that, this implementation is not incorrect as the other thread is paused while we are profiling
-                 *  and during stack unwinding we only ever read memory, but never write it.
-                 */
-
-                forceDwarf = 0;
-                unw_getcontext(&profiler_uc); // will resume from this point if the next lines segfault at any point
-
-                if (forceDwarf == 0) {
-                    // Save the backtrace
-                    bt_size_cur += rec_backtrace_ctx((jl_bt_element_t*)bt_data_prof + bt_size_cur, bt_size_max - bt_size_cur - 1, uc, NULL);
-                }
-                else if (forceDwarf == 1) {
-                    bt_size_cur += rec_backtrace_ctx_dwarf((jl_bt_element_t*)bt_data_prof + bt_size_cur, bt_size_max - bt_size_cur - 1, uc, NULL);
-                }
-                else if (forceDwarf == -1) {
-                    jl_safe_printf("WARNING: profiler attempt to access an invalid memory location\n");
-                }
-
-                forceDwarf = -2;
-#else
                 bt_size_cur += rec_backtrace_ctx((jl_bt_element_t*)bt_data_prof + bt_size_cur, bt_size_max - bt_size_cur - 1, uc, NULL);
-#endif
 
                 // Mark the end of this block with 0
                 bt_data_prof[bt_size_cur++].uintptr = 0;
