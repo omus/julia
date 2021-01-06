@@ -64,14 +64,14 @@ check-unwind: $(BUILDDIR)/libunwind-$(UNWIND_VER)/build-checked
 
 ## LLVM libunwind ##
 
-LLVMUNWIND_OPTS := $(CMAKE_COMMON)
+LLVMUNWIND_OPTS := $(CMAKE_COMMON) -DLIBUNWIND_ENABLE_PEDANTIC=OFF
 
 $(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER).tar.xz: | $(SRCCACHE)
 	$(JLDOWNLOAD) $@ https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVMUNWIND_VER)/libunwind-$(LLVMUNWIND_VER).src.tar.xz
 
 $(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER)/source-extracted: $(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER).tar.xz
 	$(JLCHECKSUM) $<
-	cd $(dir $<) && $(TAR) xfz $<
+	cd $(dir $<) && $(TAR) xf $<
 	mv $(SRCCACHE)/libunwind-$(LLVMUNWIND_VER).src $(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER)
 	echo 1 > $@
 
