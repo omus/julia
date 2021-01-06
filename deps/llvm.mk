@@ -283,11 +283,7 @@ endif
 
 # These libraries require unwind.h from the libunwind dependency
 ifeq ($(USE_SYSTEM_LIBUNWIND),0)
-ifeq ($(OS),Darwin)
-BUILT_UNWIND := $(build_prefix)/manifest/llvmunwind
-else
 BUILT_UNWIND := $(build_prefix)/manifest/unwind
-endif # Darwin
 else
 BUILT_UNWIND :=
 endif # Building libunwind

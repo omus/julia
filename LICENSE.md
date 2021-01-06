@@ -48,7 +48,7 @@ The Julia language links to the following external libraries, which have their
 own licenses:
 
 - [FEMTOLISP](https://github.com/JeffBezanson/femtolisp) [BSD-3]
-- [LIBUNWIND](https://git.savannah.gnu.org/gitweb/?p=libunwind.git;a=blob_plain;f=LICENSE;hb=master) [MIT]
+- [LIBUNWIND](https://github.com/llvm/llvm-project/blob/main/libunwind/LICENSE.TXT) [Apache 2.0]
 - [LIBUV](https://github.com/joyent/libuv/blob/master/LICENSE) [MIT]
 - [LLVM](https://releases.llvm.org/6.0.0/LICENSE.TXT) [BSD-3, effectively]
 - [UTF8PROC](https://github.com/JuliaStrings/utf8proc) [MIT]

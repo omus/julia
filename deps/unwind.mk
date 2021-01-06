@@ -1,117 +1,52 @@
 ## UNWIND ##
 
 ifneq ($(USE_BINARYBUILDER_LIBUNWIND),1)
-LIBUNWIND_CFLAGS := -U_FORTIFY_SOURCE $(fPIC)
-LIBUNWIND_CPPFLAGS :=
+UNWIND_OPTS := $(CMAKE_COMMON) -DLIBUNWIND_ENABLE_PEDANTIC=OFF
 
-$(SRCCACHE)/libunwind-$(UNWIND_VER).tar.gz: | $(SRCCACHE)
-	$(JLDOWNLOAD) $@ https://github.com/libunwind/libunwind/releases/download/v$(UNWIND_VER)/libunwind-$(UNWIND_VER).tar.gz
+$(SRCCACHE)/libunwind-$(UNWIND_VER).tar.xz: | $(SRCCACHE)
+	$(JLDOWNLOAD) $@ https://github.com/llvm/llvm-project/releases/download/llvmorg-$(UNWIND_VER)/libunwind-$(UNWIND_VER).src.tar.xz
 
-$(SRCCACHE)/libunwind-$(UNWIND_VER)/source-extracted: $(SRCCACHE)/libunwind-$(UNWIND_VER).tar.gz
+$(SRCCACHE)/libunwind-$(UNWIND_VER)/source-extracted: $(SRCCACHE)/libunwind-$(UNWIND_VER).tar.xz
 	$(JLCHECKSUM) $<
-	cd $(dir $<) && $(TAR) xfz $<
-	touch -c $(SRCCACHE)/libunwind-$(UNWIND_VER)/configure # old target
+	cd $(dir $<) && $(TAR) xf $<
+	mv $(SRCCACHE)/libunwind-$(UNWIND_VER).src $(SRCCACHE)/libunwind-$(UNWIND_VER)
 	echo 1 > $@
 
-checksum-libunwind: $(SRCCACHE)/libunwind-$(UNWIND_VER).tar.gz
+checksum-libunwind: $(SRCCACHE)/libunwind-$(UNWIND_VER).tar.xz
 	$(JLCHECKSUM) $<
 
-$(SRCCACHE)/libunwind-$(UNWIND_VER)/libunwind-prefer-extbl.patch-applied: $(SRCCACHE)/libunwind-$(UNWIND_VER)/source-extracted
-	cd $(SRCCACHE)/libunwind-$(UNWIND_VER) && patch -p1 -f < $(SRCDIR)/patches/libunwind-prefer-extbl.patch
-	echo 1 > $@
-
-$(SRCCACHE)/libunwind-$(UNWIND_VER)/libunwind-static-arm.patch-applied: $(SRCCACHE)/libunwind-$(UNWIND_VER)/libunwind-prefer-extbl.patch-applied
-	cd $(SRCCACHE)/libunwind-$(UNWIND_VER) && patch -p1 -f < $(SRCDIR)/patches/libunwind-static-arm.patch
-	echo 1 > $@
-
-$(BUILDDIR)/libunwind-$(UNWIND_VER)/build-configured: $(SRCCACHE)/libunwind-$(UNWIND_VER)/source-extracted $(SRCCACHE)/libunwind-$(UNWIND_VER)/libunwind-static-arm.patch-applied
+$(BUILDDIR)/libunwind-$(UNWIND_VER)/build-configured: $(SRCCACHE)/libunwind-$(UNWIND_VER)/source-extracted
 	mkdir -p $(dir $@)
 	cd $(dir $@) && \
-	$(dir $<)/configure $(CONFIGURE_COMMON) CPPFLAGS="$(CPPFLAGS) $(LIBUNWIND_CPPFLAGS)" CFLAGS="$(CFLAGS) $(LIBUNWIND_CFLAGS)" --disable-shared --disable-minidebuginfo --disable-tests
+	$(CMAKE) $(dir $<) $(UNWIND_OPTS)
 	echo 1 > $@
 
 $(BUILDDIR)/libunwind-$(UNWIND_VER)/build-compiled: $(BUILDDIR)/libunwind-$(UNWIND_VER)/build-configured
 	$(MAKE) -C $(dir $<)
 	echo 1 > $@
 
-$(BUILDDIR)/libunwind-$(UNWIND_VER)/build-checked: $(BUILDDIR)/libunwind-$(UNWIND_VER)/build-compiled
-ifeq ($(OS),$(BUILD_OS))
-	$(MAKE) -C $(dir $@) check
-endif
-	echo 1 > $@
-
 $(eval $(call staged-install, \
 	unwind,libunwind-$(UNWIND_VER), \
 	MAKE_INSTALL,,,))
 
-clean-unwind:
+clean-libunwind:
 	-rm $(BUILDDIR)/libunwind-$(UNWIND_VER)/build-configured $(BUILDDIR)/libunwind-$(UNWIND_VER)/build-compiled
 	-$(MAKE) -C $(BUILDDIR)/libunwind-$(UNWIND_VER) clean
 
-distclean-unwind:
-	-rm -rf $(SRCCACHE)/libunwind-$(UNWIND_VER).tar.gz \
+distclean-libunwind:
+	-rm -rf $(SRCCACHE)/libunwind-$(UNWIND_VER).tar.xz \
 		$(SRCCACHE)/libunwind-$(UNWIND_VER) \
 		$(BUILDDIR)/libunwind-$(UNWIND_VER)
 
-get-unwind: $(SRCCACHE)/libunwind-$(UNWIND_VER).tar.gz
-extract-unwind: $(SRCCACHE)/libunwind-$(UNWIND_VER)/source-extracted
-configure-unwind: $(BUILDDIR)/libunwind-$(UNWIND_VER)/build-configured
-compile-unwind: $(BUILDDIR)/libunwind-$(UNWIND_VER)/build-compiled
-#todo: libunwind tests are known to fail, so they aren't run
-fastcheck-unwind: #none
-check-unwind: $(BUILDDIR)/libunwind-$(UNWIND_VER)/build-checked
-
-
-## LLVM libunwind ##
-
-LLVMUNWIND_OPTS := $(CMAKE_COMMON) -DLIBUNWIND_ENABLE_PEDANTIC=OFF
-
-$(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER).tar.xz: | $(SRCCACHE)
-	$(JLDOWNLOAD) $@ https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVMUNWIND_VER)/libunwind-$(LLVMUNWIND_VER).src.tar.xz
-
-$(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER)/source-extracted: $(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER).tar.xz
-	$(JLCHECKSUM) $<
-	cd $(dir $<) && $(TAR) xf $<
-	mv $(SRCCACHE)/libunwind-$(LLVMUNWIND_VER).src $(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER)
-	echo 1 > $@
-
-checksum-llvmunwind: $(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER).tar.xz
-	$(JLCHECKSUM) $<
-
-$(BUILDDIR)/llvmunwind-$(LLVMUNWIND_VER)/build-configured: $(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER)/source-extracted
-	mkdir -p $(dir $@)
-	cd $(dir $@) && \
-	$(CMAKE) $(dir $<) $(LLVMUNWIND_OPTS)
-	echo 1 > $@
-
-$(BUILDDIR)/llvmunwind-$(LLVMUNWIND_VER)/build-compiled: $(BUILDDIR)/llvmunwind-$(LLVMUNWIND_VER)/build-configured
-	$(MAKE) -C $(dir $<)
-	echo 1 > $@
-
-$(eval $(call staged-install, \
-	llvmunwind,llvmunwind-$(LLVMUNWIND_VER), \
-	MAKE_INSTALL,,,))
-
-clean-llvmunwind:
-	-rm $(BUILDDIR)/llvmunwind-$(LLVMUNWIND_VER)/build-configured $(BUILDDIR)/llvmunwind-$(LLVMUNWIND_VER)/build-compiled
-	-$(MAKE) -C $(BUILDDIR)/llvmunwind-$(LLVMUNWIND_VER) clean
-
-distclean-llvmunwind:
-	-rm -rf $(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER).tar.xz \
-		$(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER) \
-		$(BUILDDIR)/llvmunwind-$(LLVMUNWIND_VER)
-
-get-llvmunwind: $(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER).tar.xz
-extract-llvmunwind: $(SRCCACHE)/llvmunwind-$(LLVMUNWIND_VER)/source-extracted
-configure-llvmunwind: $(BUILDDIR)/llvmunwind-$(LLVMUNWIND_VER)/build-configured
-compile-llvmunwind: $(BUILDDIR)/llvmunwind-$(LLVMUNWIND_VER)/build-compiled
-fastcheck-llvmunwind: check-llvmunwind
-check-llvmunwind: # no test/check provided by Makefile
+get-libunwind: $(SRCCACHE)/libunwind-$(UNWIND_VER).tar.xz
+extract-libunwind: $(SRCCACHE)/libunwind-$(UNWIND_VER)/source-extracted
+configure-libunwind: $(BUILDDIR)/libunwind-$(UNWIND_VER)/build-configured
+compile-libunwind: $(BUILDDIR)/libunwind-$(UNWIND_VER)/build-compiled
+fastcheck-libunwind: check-libunwind
+check-libunwind: # no test/check provided by Makefile
 
 else # USE_BINARYBUILDER_LIBUNWIND
 
 $(eval $(call bb-install,unwind,UNWIND,false))
-
-$(eval $(call bb-install,llvmunwind,LLVMUNWIND,false))
 
 endif

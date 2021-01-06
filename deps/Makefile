@@ -25,7 +25,7 @@ BUILDDIR := $(BUILDDIR)$(MAYBE_HOST)
 #
 # autoconf configure-driven scripts: pcre unwind gmp mpfr patchelf libuv curl
 # custom Makefile rules: openlibm dsfmt suitesparse-wrapper suitesparse lapack openblas utf8proc objconv libwhich
-# CMake libs: llvm llvmunwind libgit2 libssh2 mbedtls
+# CMake libs: llvm libunwind libgit2 libssh2 mbedtls
 #
 # downloadable via git: llvm-svn, libuv, libopenlibm, utf8proc, libgit2, libssh2
 #
@@ -53,12 +53,8 @@ endif
 
 ifeq ($(DISABLE_LIBUNWIND), 0)
 ifeq ($(USE_SYSTEM_LIBUNWIND), 0)
-ifeq ($(OS), Linux)
+ifneq (,$(findstring $(OS),Linux FreeBSD Darwin))
 DEP_LIBS += unwind
-else ifeq ($(OS), FreeBSD)
-DEP_LIBS += unwind
-else ifeq ($(OS), Darwin)
-DEP_LIBS += llvmunwind
 endif
 endif
 endif
@@ -182,16 +178,6 @@ cleanall: $(addprefix clean-, $(DEP_LIBS))
 distcleanall: $(addprefix distclean-, $(DEP_LIBS))
 	rm -rf $(build_prefix)
 getall: get-llvm get-libuv get-pcre get-openlibm get-dsfmt get-openblas get-lapack get-suitesparse get-unwind get-gmp get-mpfr get-patchelf get-utf8proc get-objconv get-mbedtls get-libssh2 get-nghttp2 get-curl get-libgit2 get-libwhich get-zlib get-p7zip get-csl
-
-# If we're building for MacOS, no matter what, `getall` should include `llvmunwind`
-ifeq ($(OS),Darwin)
-getall: get-llvmunwind
-endif
-
-# Same if we're building a purely-source archive, always include `llvmunwind`
-ifeq ($(USE_BINARYBUILDER_LLVMUNWIND),0)
-getall: get-llvmunwind
-endif
 
 include $(SRCDIR)/csl.mk
 include $(SRCDIR)/llvm.mk
